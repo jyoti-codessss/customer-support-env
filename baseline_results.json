@@ -1,0 +1,55 @@
+{
+  "model": "meta-llama/Llama-3.1-8B-Instruct",
+  "results": [
+    {
+      "task_id": "billing_dispute_easy",
+      "difficulty": "easy",
+      "final_score": 0.6,
+      "cumulative_reward": 0.15,
+      "turns_used": 6,
+      "max_turns": 6,
+      "breakdown": {
+        "refund_correct": false,
+        "plan_confirmed": true,
+        "ticket_closed": true,
+        "empathy_shown": true,
+        "efficient": false,
+        "final_score": 0.6
+      }
+    },
+    {
+      "task_id": "technical_outage_medium",
+      "difficulty": "medium",
+      "final_score": 0.85,
+      "cumulative_reward": 0.33,
+      "turns_used": 5,
+      "max_turns": 8,
+      "breakdown": {
+        "escalated_to_engineering": true,
+        "diagnostics_collected": 3,
+        "no_premature_close": true,
+        "credit_offered": false,
+        "impact_acknowledged": true,
+        "final_score": 0.85
+      }
+    },
+    {
+      "task_id": "fraud_complaint_hard",
+      "difficulty": "hard",
+      "final_score": 0.75,
+      "cumulative_reward": 0.41,
+      "turns_used": 6,
+      "max_turns": 10,
+      "breakdown": {
+        "identity_verified_first": true,
+        "full_refund_issued": false,
+        "escalated_to_fraud": true,
+        "security_steps_mentioned": true,
+        "recovery_steps_provided": true,
+        "empathy_urgency": true,
+        "final_score": 0.75
+      }
+    }
+  ],
+  "average_score": 0.7333
+}
