@@ -283,12 +283,16 @@ print(breakdown)
 customer-support-env/
 ├── openenv.yaml              # OpenEnv specification metadata
 ├── pyproject.toml            # Python project config + openenv validate metadata
+├── uv.lock                   # Dependency lock file
 ├── app.py                    # FastAPI server (HuggingFace Spaces entrypoint)
 ├── inference.py              # Baseline inference script (HF_TOKEN)
 ├── evaluate.py               # Judge evaluation script (automated scoring)
 ├── validate_env.py           # Standalone test suite (27 tests, no extra deps)
 ├── requirements.txt
 ├── Dockerfile
+│
+├── server/
+│   └── app.py                # OpenEnv multi-mode deployment entry point
 │
 ├── env/
 │   ├── __init__.py
@@ -358,6 +362,8 @@ API documentation is auto-generated at `/docs`.
 | `state() → EnvironmentState` | ✅ `env/environment.py` |
 | `openenv.yaml` metadata | ✅ Root directory |
 | `pyproject.toml` | ✅ Root directory |
+| `uv.lock` | ✅ Root directory |
+| `server/app.py` entry point | ✅ `server/app.py` with `main()` |
 | ≥ 3 tasks with agent graders | ✅ Easy / Medium / Hard |
 | Graders return score in [0.0, 1.0] | ✅ `graders/task_graders.py` |
 | Incremental reward (not just terminal) | ✅ Per-step reward at every action |
