@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "customer-support-env"
+version = "1.0.0"
+description = "OpenEnv-compliant Customer Support Agent Environment"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+keywords = ["openenv", "reinforcement-learning", "customer-support", "agent"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "pydantic>=2.0.0",
+    "openai>=1.0.0",
+    "huggingface-hub>=0.19.0",
+    "requests>=2.31.0",
+    "python-multipart>=0.0.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "httpx>=0.25.0",
+]
+
+[tool.openenv]
+name = "customer-support-env"
+version = "1.0.0"
+tags = ["openenv", "customer-support", "multi-turn", "reasoning"]
+tasks = ["billing_dispute_easy", "technical_outage_medium", "fraud_complaint_hard"]
+observation_space = "text"
+action_space = "text"
+reward_range = [-1.0, 1.0]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["env*", "tasks*", "graders*"]
