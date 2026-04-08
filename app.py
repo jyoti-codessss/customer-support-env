@@ -1,13 +1,15 @@
 """
 app.py — FastAPI server exposing CustomerSupportEnv as an HTTP API.
 Uses file-based session persistence for HuggingFace Spaces.
+FIXED: /reset accepts empty body (task_id optional, defaults to 'billing_dispute_easy')
 """
 
 import uuid
 import os
 import pickle
-from typing import Any, Dict, Optional
-from fastapi import FastAPI, HTTPException
+import json
+from typing import Dict, Optional
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -73,10 +75,6 @@ def delete_session(session_id: str):
         pass
 
 
-class ResetRequest(BaseModel):
-    task_id: str = "billing_dispute_easy"
-
-
 class StepRequest(BaseModel):
     session_id: str
     action: Action
@@ -110,12 +108,31 @@ def list_tasks():
 
 
 @app.post("/reset")
-def reset(request: ResetRequest):
-    if request.task_id not in TASKS:
-        raise HTTPException(status_code=400, detail=f"Unknown task: {request.task_id}")
+async def reset(request: Request):
+    """
+    Reset the environment.
+    - Empty body → uses default task 'billing_dispute_easy'
+    - {"task_id": "..."} → uses specified task
+    """
+    task_id = "billing_dispute_easy"
+
+    try:
+        body = await request.body()
+        if body and body.strip():
+            data = json.loads(body)
+            if isinstance(data, dict):
+                task_id = data.get("task_id", "billing_dispute_easy") or "billing_dispute_easy"
+    except Exception:
+        pass  # empty or invalid body → use default
+
+    if task_id not in TASKS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown task: '{task_id}'. Available: {list(TASKS.keys())}"
+        )
 
     session_id = str(uuid.uuid4())
-    env = CustomerSupportEnv(request.task_id)
+    env = CustomerSupportEnv(task_id)
     obs = env.reset()
     save_session(session_id, env)
 
