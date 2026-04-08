@@ -22,7 +22,7 @@ dependencies = [
 ]
 
 [project.scripts]
-server = "app:app"
+server = "server.app:main"
 
 [tool.openenv]
 name = "customer-support-env"
@@ -35,4 +35,4 @@ reward_range = [-1.0, 1.0]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["env*", "tasks*", "graders*"]
+include = ["env*", "tasks*", "graders*", "server*"]
