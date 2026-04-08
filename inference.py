@@ -14,21 +14,23 @@ import os
 import sys
 import json
 import argparse
-from typing import Optional
+from typing import Optional, List
 
 from openai import OpenAI
 
-# Ensure local imports work
 sys.path.insert(0, os.path.dirname(__file__))
 
 from env.environment import CustomerSupportEnv
 from env.models import Action, ActionType
 from tasks.task_definitions import TASKS
 
-# ── Config ────────────────────────────────────────────────────────────────────
+# ── Config ─────────────────────────────────────────────────────────────────
+# Defaults set for API_BASE_URL and MODEL_NAME (not HF_TOKEN)
+API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+MODEL_NAME   = os.getenv("MODEL_NAME",   "meta-llama/Llama-3.1-8B-Instruct")
+HF_TOKEN     = os.getenv("HF_TOKEN")  # No default — must be set by user
 
-HF_BASE_URL = "https://router.huggingface.co/v1"
-DEFAULT_MODEL = "meta-llama/Llama-3.1-8B-Instruct"
+BENCHMARK = "customer-support-env"
 
 SYSTEM_PROMPT = """You are a professional customer support agent. Your goal is to resolve customer issues efficiently and empathetically.
 
@@ -56,8 +58,24 @@ Guidelines:
 - Escalate when you cannot resolve the issue directly"""
 
 
+# ── Logging helpers (exact hackathon format) ────────────────────────────────
+def log_start(task: str, env: str, model: str) -> None:
+    print(f"[START] task={task} env={env} model={model}", flush=True)
+
+
+def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]) -> None:
+    error_val = error if error else "null"
+    done_val = str(done).lower()
+    print(f"[STEP] step={step} action={action} reward={reward:.2f} done={done_val} error={error_val}", flush=True)
+
+
+def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
+    rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+    print(f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}", flush=True)
+
+
+# ── Prompt builder ──────────────────────────────────────────────────────────
 def build_user_prompt(obs, task_context: str) -> str:
-    """Build the prompt for the model from current observation."""
     history_text = ""
     for turn in obs.conversation_history:
         prefix = "Customer" if turn.role == "user" else "Agent"
@@ -81,28 +99,24 @@ TURN: {obs.turn_number}
 Respond with your next action as a JSON object."""
 
 
-def parse_action(response_text: str) -> Optional[Action]:
-    """Parse model response into an Action object."""
+# ── Action parser ───────────────────────────────────────────────────────────
+def parse_action(response_text: str) -> Action:
     try:
-        # Strip markdown code fences if present
         text = response_text.strip()
         if text.startswith("```"):
             lines = text.split("\n")
             text = "\n".join(lines[1:-1]) if len(lines) > 2 else text
-
         data = json.loads(text)
         return Action(**data)
-    except Exception as e:
-        print(f"  [Parse error] {e} | Raw: {response_text[:100]}")
-        # Fallback: respond with the raw text
+    except Exception:
         return Action(
             action_type=ActionType.RESPOND,
             response_text=response_text[:500] if response_text else "I'm looking into this for you."
         )
 
 
-def run_task(client: OpenAI, model: str, task_id: str, verbose: bool = True) -> dict:
-    """Run a single task and return results."""
+# ── Task runner ─────────────────────────────────────────────────────────────
+def run_task(client: OpenAI, model: str, task_id: str) -> dict:
     env = CustomerSupportEnv(task_id)
     task_def = TASKS[task_id]
     task_context = task_def["system_context"]
@@ -110,22 +124,19 @@ def run_task(client: OpenAI, model: str, task_id: str, verbose: bool = True) -> 
     obs = env.reset()
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
-    total_reward = 0.0
+    rewards: List[float] = []
     done = False
-    turn = 0
+    step = 0
 
-    if verbose:
-        print(f"\n{'='*60}")
-        print(f"TASK: {task_id} | Difficulty: {task_def['difficulty'].upper()}")
-        print(f"{'='*60}")
-        print(f"Customer: {obs.user_message}\n")
+    # [START] log
+    log_start(task=task_id, env=BENCHMARK, model=model)
 
     while not done:
-        turn += 1
+        step += 1
         user_prompt = build_user_prompt(obs, task_context)
         messages.append({"role": "user", "content": user_prompt})
 
-        # Call the model
+        error = None
         try:
             completion = client.chat.completions.create(
                 model=model,
@@ -135,104 +146,71 @@ def run_task(client: OpenAI, model: str, task_id: str, verbose: bool = True) -> 
             )
             raw_response = completion.choices[0].message.content
         except Exception as e:
-            print(f"  [API Error turn {turn}]: {e}")
+            error = str(e)
             raw_response = '{"action_type": "respond", "response_text": "I apologize for the delay. Let me look into this for you right away."}'
 
         messages.append({"role": "assistant", "content": raw_response})
 
-        # Parse and execute action
         action = parse_action(raw_response)
         obs, reward, done, info = env.step(action)
-        total_reward += reward
+        rewards.append(reward)
 
-        if verbose:
-            print(f"--- Turn {turn} | Action: {action.action_type} | Reward: {reward:+.3f} ---")
-            if action.response_text:
-                print(f"Agent: {action.response_text[:200]}")
-            if action.refund_amount:
-                print(f"  💰 Refund: ${action.refund_amount:.2f}")
-            if action.escalation_reason:
-                print(f"  📤 Escalation: {action.escalation_reason[:100]}")
-            if obs.user_message and not done:
-                print(f"Customer: {obs.user_message}")
-            print()
+        # [STEP] log
+        log_step(step=step, action=action.action_type, reward=reward, done=done, error=error)
 
-    # Grade the episode
+    # Grade
     final_score, breakdown = env.grade()
+    success = final_score >= 0.5
 
-    if verbose:
-        print(f"\n📊 RESULTS — {task_id}")
-        print(f"   Task Score:       {final_score:.3f} / 1.000")
-        print(f"   Cumulative Reward:{total_reward:+.3f}")
-        print(f"   Turns Used:       {turn} / {task_def['max_turns']}")
-        print(f"   Ticket Status:    {env.state().ticket_status}")
-        print(f"   Scoring Breakdown:")
-        for k, v in breakdown.items():
-            if k != "final_score":
-                print(f"     {k}: {v}")
+    # [END] log
+    log_end(success=success, steps=step, score=final_score, rewards=rewards)
 
     return {
         "task_id": task_id,
         "difficulty": task_def["difficulty"],
         "final_score": final_score,
-        "cumulative_reward": round(total_reward, 4),
-        "turns_used": turn,
+        "cumulative_reward": round(sum(rewards), 4),
+        "turns_used": step,
         "max_turns": task_def["max_turns"],
         "breakdown": breakdown,
     }
 
 
+# ── Main ────────────────────────────────────────────────────────────────────
 def main():
     parser = argparse.ArgumentParser(description="CustomerSupportEnv Inference Script")
     parser.add_argument("--task", default=None, help="Specific task to run (default: all)")
-    parser.add_argument("--model", default=DEFAULT_MODEL, help="Model ID")
-    parser.add_argument("--quiet", action="store_true", help="Suppress verbose output")
+    parser.add_argument("--model", default=MODEL_NAME, help="Model ID")
     args = parser.parse_args()
 
-    # Auth
-    hf_token = os.environ.get("HF_TOKEN")
-    if not hf_token:
+    if not HF_TOKEN:
         print("ERROR: HF_TOKEN environment variable not set.")
         print("Usage: HF_TOKEN=your_token python inference.py")
         sys.exit(1)
 
-    client = OpenAI(
-        base_url=HF_BASE_URL,
-        api_key=hf_token,
-    )
+    # OpenAI client configured via API_BASE_URL and HF_TOKEN
+    client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
     tasks_to_run = [args.task] if args.task else list(TASKS.keys())
     results = []
 
-    print(f"\n🤖 CustomerSupportEnv Baseline Evaluation")
-    print(f"   Model: {args.model}")
-    print(f"   Tasks: {tasks_to_run}")
-
     for task_id in tasks_to_run:
-        result = run_task(client, args.model, task_id, verbose=not args.quiet)
+        result = run_task(client, args.model, task_id)
         results.append(result)
 
     # Summary
-    print(f"\n{'='*60}")
-    print("📈 BASELINE SUMMARY")
-    print(f"{'='*60}")
     avg_score = sum(r["final_score"] for r in results) / len(results)
+    print(f"\n{'='*60}")
+    print("BASELINE SUMMARY")
+    print(f"{'='*60}")
     for r in results:
         bar = "█" * int(r["final_score"] * 20)
         print(f"  {r['task_id']:<30} {r['final_score']:.3f}  {bar}")
     print(f"  {'AVERAGE':<30} {avg_score:.3f}")
 
-    # Save results
-    output_path = "baseline_results.json"
-    with open(output_path, "w") as f:
-        json.dump({
-            "model": args.model,
-            "results": results,
-            "average_score": round(avg_score, 4),
-        }, f, indent=2)
-    print(f"\n  Results saved to {output_path}")
-
-    return avg_score
+    with open("baseline_results.json", "w") as f:
+        json.dump({"model": args.model, "results": results, "average_score": round(avg_score, 4)}, f, indent=2)
+    print(f"\n  Results saved to baseline_results.json")
 
 
 if __name__ == "__main__":
