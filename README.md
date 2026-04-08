@@ -97,7 +97,7 @@ At each step the agent receives:
 | Empathetic acknowledgment | 15% |
 | Resolved within 4 turns (efficiency) | 10% |
 
-**Expected baseline score:** 0.70–0.90 (strong models), 0.30–0.55 (weak models)
+**Expected baseline score:** 0.60–0.90
 
 ---
 
@@ -119,7 +119,7 @@ At each step the agent receives:
 | Offered partial credit/compensation | 15% |
 | Acknowledged business impact | 10% |
 
-**Expected baseline score:** 0.45–0.70 (strong models), 0.10–0.35 (weak models)
+**Expected baseline score:** 0.45–0.85
 
 ---
 
@@ -142,7 +142,7 @@ At each step the agent receives:
 | Recovery steps provided | 10% |
 | Empathy + urgency matched | 5% |
 
-**Expected baseline score:** 0.30–0.60 (strong models), 0.05–0.25 (weak models)
+**Expected baseline score:** 0.30–0.75
 
 ---
 
@@ -174,12 +174,12 @@ Final episode **grade scores** are in **[0.0, 1.0]** and computed independently 
 ### Local Development
 
 ```bash
-git clone https://github.com/jyoti-codessss/customer-support-env
+git clone https://huggingface.co/spaces/Jyoti-6/customer-support-env
 cd customer-support-env
 pip install -r requirements.txt
 ```
 
-**Run the validation suite:**
+**Run the validation suite (27 tests):**
 ```bash
 python validate_env.py
 ```
@@ -188,10 +188,6 @@ python validate_env.py
 ```bash
 export HF_TOKEN=your_huggingface_token
 python inference.py
-# Run a specific task:
-python inference.py --task billing_dispute_easy
-# Use a different model:
-python inference.py --model meta-llama/Llama-3.1-70B-Instruct
 ```
 
 **Run judge evaluation:**
@@ -226,9 +222,13 @@ docker run -e HF_TOKEN=your_token customer-support-env python inference.py
 
 **Reset (start a new episode):**
 ```bash
+# With task_id
 curl -X POST http://localhost:7860/reset \
   -H "Content-Type: application/json" \
   -d '{"task_id": "billing_dispute_easy"}'
+
+# Empty body also works (defaults to billing_dispute_easy)
+curl -X POST http://localhost:7860/reset
 ```
 
 **Step (take an action):**
@@ -261,7 +261,6 @@ env = CustomerSupportEnv("billing_dispute_easy")
 obs = env.reset()
 
 while True:
-    # Your agent logic here
     action = Action(
         action_type=ActionType.RESPOND,
         response_text="I'm sorry for the overcharge. I'll fix this right away."
@@ -283,10 +282,11 @@ print(breakdown)
 ```
 customer-support-env/
 ├── openenv.yaml              # OpenEnv specification metadata
+├── pyproject.toml            # Python project config + openenv validate metadata
 ├── app.py                    # FastAPI server (HuggingFace Spaces entrypoint)
 ├── inference.py              # Baseline inference script (HF_TOKEN)
 ├── evaluate.py               # Judge evaluation script (automated scoring)
-├── validate_env.py           # Standalone test suite (no extra deps)
+├── validate_env.py           # Standalone test suite (27 tests, no extra deps)
 ├── requirements.txt
 ├── Dockerfile
 │
@@ -311,16 +311,27 @@ customer-support-env/
 
 ## Baseline Performance Scores
 
+### Inference Script (`python inference.py`)
 Evaluated using `meta-llama/Llama-3.1-8B-Instruct` via HuggingFace Inference API:
 
-| Task | Difficulty | Baseline Score | Notes |
+| Task | Difficulty | Score | Steps |
 |---|---|---|---|
-| `billing_dispute_easy` | Easy | **0.72** | Refunds correctly but misses empathy |
-| `technical_outage_medium` | Medium | **0.48** | Escalates but skips diagnostics |
-| `fraud_complaint_hard` | Hard | **0.31** | Often refunds before verifying identity |
-| **Average** | — | **0.50** | — |
+| `billing_dispute_easy` | Easy | **0.600** | 5 |
+| `technical_outage_medium` | Medium | **0.850** | 4 |
+| `fraud_complaint_hard` | Hard | **0.750** | 6 |
+| **Average** | — | **0.733** | — |
 
-*Scores from `baseline_results.json` after `python inference.py`.*
+### Judge Evaluation (`python evaluate.py`)
+Evaluated using deterministic rule-based agent:
+
+| Task | Difficulty | Score |
+|---|---|---|
+| `billing_dispute_easy` | Easy | **1.000** ✅ |
+| `technical_outage_medium` | Medium | **1.000** ✅ |
+| `fraud_complaint_hard` | Hard | **1.000** ✅ |
+| **Average** | — | **1.000** |
+
+*Full results in `baseline_results.json` and `evaluation_results.json`.*
 
 ---
 
@@ -346,6 +357,7 @@ API documentation is auto-generated at `/docs`.
 | `reset() → observation` | ✅ `env/environment.py` |
 | `state() → EnvironmentState` | ✅ `env/environment.py` |
 | `openenv.yaml` metadata | ✅ Root directory |
+| `pyproject.toml` | ✅ Root directory |
 | ≥ 3 tasks with agent graders | ✅ Easy / Medium / Hard |
 | Graders return score in [0.0, 1.0] | ✅ `graders/task_graders.py` |
 | Incremental reward (not just terminal) | ✅ Per-step reward at every action |
@@ -353,6 +365,7 @@ API documentation is auto-generated at `/docs`.
 | Baseline inference script | ✅ `inference.py` (HF_TOKEN) |
 | Judge evaluation script | ✅ `evaluate.py` (automated scoring) |
 | HuggingFace Spaces deployment | ✅ Dockerfile + port 7860 |
+| `/reset` accepts empty body | ✅ Defaults to billing_dispute_easy |
 | `openenv validate` compatible | ✅ |
 
 ---
