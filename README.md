@@ -174,7 +174,7 @@ Final episode **grade scores** are in **[0.0, 1.0]** and computed independently 
 ### Local Development
 
 ```bash
-git clone https://github.com/your-org/customer-support-env
+git clone https://github.com/jyoti-codessss/customer-support-env
 cd customer-support-env
 pip install -r requirements.txt
 ```
@@ -192,6 +192,11 @@ python inference.py
 python inference.py --task billing_dispute_easy
 # Use a different model:
 python inference.py --model meta-llama/Llama-3.1-70B-Instruct
+```
+
+**Run judge evaluation:**
+```bash
+python evaluate.py --base-url http://localhost:7860
 ```
 
 **Start the API server:**
@@ -280,6 +285,7 @@ customer-support-env/
 ├── openenv.yaml              # OpenEnv specification metadata
 ├── app.py                    # FastAPI server (HuggingFace Spaces entrypoint)
 ├── inference.py              # Baseline inference script (HF_TOKEN)
+├── evaluate.py               # Judge evaluation script (automated scoring)
 ├── validate_env.py           # Standalone test suite (no extra deps)
 ├── requirements.txt
 ├── Dockerfile
@@ -322,24 +328,10 @@ Evaluated using `meta-llama/Llama-3.1-8B-Instruct` via HuggingFace Inference API
 
 This environment is tagged with `openenv` and deployable directly as a HuggingFace Space.
 
-**`README.md` Space header (add to top of README for HF):**
-```yaml
----
-title: CustomerSupportEnv
-emoji: 🎧
-colorFrom: blue
-colorTo: purple
-sdk: docker
-pinned: false
-tags:
-  - openenv
-  - customer-support
-  - agent-evaluation
----
-```
-
 The FastAPI server starts on port 7860 (HuggingFace default) via the `CMD` in `Dockerfile`.  
 API documentation is auto-generated at `/docs`.
+
+**Live Space:** https://huggingface.co/spaces/Jyoti-6/customer-support-env
 
 ---
 
@@ -359,6 +351,7 @@ API documentation is auto-generated at `/docs`.
 | Incremental reward (not just terminal) | ✅ Per-step reward at every action |
 | Penalties for bad behavior | ✅ Loops, premature close, unverified refunds |
 | Baseline inference script | ✅ `inference.py` (HF_TOKEN) |
+| Judge evaluation script | ✅ `evaluate.py` (automated scoring) |
 | HuggingFace Spaces deployment | ✅ Dockerfile + port 7860 |
 | `openenv validate` compatible | ✅ |
 
