@@ -1,13 +1,5 @@
 """
 inference.py — Baseline inference script for CustomerSupportEnv.
-
-Evaluates a model across all three tasks using the OpenAI API client
-(compatible with HuggingFace Inference Endpoints via HF_TOKEN).
-
-Usage:
-    HF_TOKEN=your_token python inference.py
-    HF_TOKEN=your_token python inference.py --task billing_dispute_easy
-    HF_TOKEN=your_token python inference.py --model meta-llama/Llama-3.1-8B-Instruct
 """
 
 import os
@@ -24,11 +16,9 @@ from env.environment import CustomerSupportEnv
 from env.models import Action, ActionType
 from tasks.task_definitions import TASKS
 
-# ── Config ─────────────────────────────────────────────────────────────────
-# Defaults set for API_BASE_URL and MODEL_NAME (not HF_TOKEN)
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME   = os.getenv("MODEL_NAME",   "meta-llama/Llama-3.1-8B-Instruct")
-HF_TOKEN     = os.getenv("HF_TOKEN")  # No default — must be set by user
+HF_TOKEN     = os.getenv("HF_TOKEN")
 
 BENCHMARK = "customer-support-env"
 
@@ -58,7 +48,6 @@ Guidelines:
 - Escalate when you cannot resolve the issue directly"""
 
 
-# ── Logging helpers (exact hackathon format) ────────────────────────────────
 def log_start(task: str, env: str, model: str) -> None:
     print(f"[START] task={task} env={env} model={model}", flush=True)
 
@@ -71,10 +60,9 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
 
 def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
-    print(f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}", flush=True)
+    print(f"[END] success={str(success).lower()} steps={steps} score={score:.2f} rewards={rewards_str}", flush=True)
 
 
-# ── Prompt builder ──────────────────────────────────────────────────────────
 def build_user_prompt(obs, task_context: str) -> str:
     history_text = ""
     for turn in obs.conversation_history:
@@ -99,7 +87,6 @@ TURN: {obs.turn_number}
 Respond with your next action as a JSON object."""
 
 
-# ── Action parser ───────────────────────────────────────────────────────────
 def parse_action(response_text: str) -> Action:
     try:
         text = response_text.strip()
@@ -115,7 +102,6 @@ def parse_action(response_text: str) -> Action:
         )
 
 
-# ── Task runner ─────────────────────────────────────────────────────────────
 def run_task(client: OpenAI, model: str, task_id: str) -> dict:
     env = CustomerSupportEnv(task_id)
     task_def = TASKS[task_id]
@@ -128,7 +114,6 @@ def run_task(client: OpenAI, model: str, task_id: str) -> dict:
     done = False
     step = 0
 
-    # [START] log
     log_start(task=task_id, env=BENCHMARK, model=model)
 
     while not done:
@@ -155,14 +140,11 @@ def run_task(client: OpenAI, model: str, task_id: str) -> dict:
         obs, reward, done, info = env.step(action)
         rewards.append(reward)
 
-        # [STEP] log
         log_step(step=step, action=action.action_type, reward=reward, done=done, error=error)
 
-    # Grade
     final_score, breakdown = env.grade()
     success = final_score >= 0.5
 
-    # [END] log
     log_end(success=success, steps=step, score=final_score, rewards=rewards)
 
     return {
@@ -176,7 +158,6 @@ def run_task(client: OpenAI, model: str, task_id: str) -> dict:
     }
 
 
-# ── Main ────────────────────────────────────────────────────────────────────
 def main():
     parser = argparse.ArgumentParser(description="CustomerSupportEnv Inference Script")
     parser.add_argument("--task", default=None, help="Specific task to run (default: all)")
@@ -188,7 +169,6 @@ def main():
         print("Usage: HF_TOKEN=your_token python inference.py")
         sys.exit(1)
 
-    # OpenAI client configured via API_BASE_URL and HF_TOKEN
     client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
     tasks_to_run = [args.task] if args.task else list(TASKS.keys())
@@ -198,7 +178,6 @@ def main():
         result = run_task(client, args.model, task_id)
         results.append(result)
 
-    # Summary
     avg_score = sum(r["final_score"] for r in results) / len(results)
     print(f"\n{'='*60}")
     print("BASELINE SUMMARY")
