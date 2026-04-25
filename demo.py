@@ -16,6 +16,7 @@ DEMO_SCRIPTS = {
     "subscription_cancellation_hard": ["I am sorry to hear you want to cancel. May I ask what prompted this?","I understand your frustration. Let me see what I can offer.","I would like to offer you 3 months free plus a plan upgrade.","I have processed your request. Account active until end of billing period."],
     "vip_account_recovery_expert": ["As a VIP customer, you have my personal attention. Initiating recovery.","I have verified your identity through secure VIP verification process.","I am restoring full access with enhanced security measures. Data intact.","Your VIP account is fully restored. A dedicated manager will contact you shortly."],
 }
+
 TASK_INFO = {
     "billing_dispute_easy":("Easy","Customer disputes duplicate billing","I was charged twice for my subscription! I want my money back NOW!"),
     "technical_outage_medium":("Medium","Customer reports service outage","Your service has been down for 3 hours and I am losing business!"),
@@ -23,6 +24,7 @@ TASK_INFO = {
     "subscription_cancellation_hard":("Hard","Customer requesting cancellation","I want to cancel immediately. Service quality has gone down."),
     "vip_account_recovery_expert":("Expert","VIP customer locked out","I am a premium enterprise customer locked out for 6 hours. Critical emergency!"),
 }
+
 HEADER = '<div style="text-align:center;padding:20px;background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:16px;margin-bottom:16px;"><h1 style="color:#a5b4fc;margin:0;">CustomerSupportEnv</h1><p style="color:#818cf8;margin:6px 0 0;">3-Layer Multi-Agent | GRPO Trained | 1.000/1.000 Score</p></div>'
 
 def on_task_select(task_id):
@@ -90,4 +92,4 @@ with gr.Blocks(title="CustomerSupportEnv Demo") as demo:
     run_btn.click(fn=run_agent,inputs=[task_dd],outputs=[steps_out,score_out,chart_out])
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0",server_port=7861)
+    demo.launch(server_name="0.0.0.0", server_port=7860)
