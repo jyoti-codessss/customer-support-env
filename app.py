@@ -324,9 +324,11 @@ def delete_customer_memory(account_id: str):
 
 # ── Mount Gradio Demo ────────────────────────────────────────────────────────
 
-try:
-    import gradio as gr
-    from demo import demo as gradio_demo
-    app = gr.mount_gradio_app(app, gradio_demo, path="/demo")
-except ImportError:
-    pass  # gradio not installed — skip demo mount
+import gradio as gr
+from demo import demo as gradio_demo
+app = gr.mount_gradio_app(app, gradio_demo, path="/demo")
+
+
+@app.get("/demo-info")
+def demo_info():
+    return {"demo_url": "/demo", "status": "available"}
