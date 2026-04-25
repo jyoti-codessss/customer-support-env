@@ -19,6 +19,9 @@ from env.models import (
 )
 from tasks.task_definitions import TASKS
 from graders.task_graders import GRADERS
+from env.memory import (
+    get_memory, Interaction, detect_sentiment, detect_resolution,
+)
 
 
 # ── Reward Constants ─────────────────────────────────────────────────────────
@@ -53,7 +56,7 @@ class CustomerSupportEnv:
         score = env.grade()
     """
 
-    def __init__(self, task_id: str = "billing_dispute_easy"):
+    def __init__(self, task_id: str = "billing_dispute_easy", use_memory: bool = True):
         if task_id not in TASKS:
             raise ValueError(
                 f"Unknown task '{task_id}'. Available: {list(TASKS.keys())}"
@@ -61,6 +64,9 @@ class CustomerSupportEnv:
         self.task_id = task_id
         self._task_def = TASKS[task_id]
         self._state: Optional[EnvironmentState] = None
+        self._use_memory = use_memory
+        self._memory = get_memory() if use_memory else None
+        self._memory_context: str = ""
 
     # ── Public OpenEnv Interface ─────────────────────────────────────────────
 
@@ -69,6 +75,11 @@ class CustomerSupportEnv:
         meta: TicketMetadata = copy.deepcopy(self._task_def["metadata"])
         ticket_id = self._task_def["ticket_id"]
         initial_msg = self._task_def["initial_user_message"]
+
+        # Load customer memory context if available
+        self._memory_context = ""
+        if self._memory and meta.account_id:
+            self._memory_context = self._memory.recall_context(meta.account_id)
 
         self._state = EnvironmentState(
             ticket_id=ticket_id,
@@ -146,6 +157,11 @@ class CustomerSupportEnv:
             )
 
         info["cumulative_reward"] = s.cumulative_reward
+
+        # Save interaction to memory when episode ends
+        if done and self._memory:
+            self._save_to_memory()
+
         return self._build_observation(next_user_msg or ""), reward, done, info
 
     def state(self) -> EnvironmentState:
@@ -275,19 +291,31 @@ class CustomerSupportEnv:
 
     def _build_observation(self, latest_user_msg: str) -> Observation:
         s = self._state
+        meta_dict = {
+            "customer_name": s.metadata.customer_name,
+            "account_id": s.metadata.account_id,
+            "plan": s.metadata.plan,
+            "prior_contacts": s.metadata.prior_contacts,
+            "issue_category": s.metadata.issue_category,
+        }
+        # Include memory context if available
+        if self._memory_context:
+            meta_dict["memory_context"] = self._memory_context
+            if self._memory:
+                meta_dict["is_returning_customer"] = self._memory.is_returning(
+                    s.metadata.account_id
+                )
+                meta_dict["has_repeat_issue"] = self._memory.has_repeat_issue(
+                    s.metadata.account_id, s.metadata.issue_category
+                )
+
         return Observation(
             ticket_id=s.ticket_id,
             user_message=latest_user_msg,
             conversation_history=list(s.conversation_history),
             ticket_status=s.ticket_status,
             turn_number=s.turn_number,
-            metadata={
-                "customer_name": s.metadata.customer_name,
-                "account_id": s.metadata.account_id,
-                "plan": s.metadata.plan,
-                "prior_contacts": s.metadata.prior_contacts,
-                "issue_category": s.metadata.issue_category,
-            },
+            metadata=meta_dict,
         )
 
     def _identity_verified(self) -> bool:
@@ -338,6 +366,68 @@ class CustomerSupportEnv:
             return "Thank you. How long does the refund take to process?"
 
         return None
+
+    # ── Memory Persistence ────────────────────────────────────────────────────
+
+    def _save_to_memory(self) -> None:
+        """Save the completed interaction to memory."""
+        import time as _time
+        s = self._state
+        if not s:
+            return
+
+        agent_texts = [t.content for t in s.conversation_history if t.role == "agent"]
+        user_texts = [t.content for t in s.conversation_history if t.role == "user"]
+        all_text = " ".join(user_texts + agent_texts)
+
+        action_types = [
+            t.content.split("]")[0].strip("[") if t.content.startswith("[") else "respond"
+            for t in s.conversation_history if t.role == "agent"
+        ]
+
+        # Detect sentiment from user messages
+        sentiment = detect_sentiment(" ".join(user_texts))
+
+        # Determine resolution type
+        resolution = detect_resolution(
+            action_types, s.escalated, s.resolved
+        )
+
+        # Build summary
+        category = s.metadata.issue_category
+        summary = f"{category} issue"
+        if s.refund_issued > 0:
+            summary += f", refund ${s.refund_issued:.2f}"
+        if s.escalated:
+            summary += f", escalated to {s.metadata.escalation_department or 'support'}"
+        if s.resolved:
+            summary += ", resolved"
+
+        # Grade for memory
+        try:
+            score, _ = self.grade()
+        except Exception:
+            score = 0.0
+
+        interaction = Interaction(
+            timestamp=_time.strftime("%Y-%m-%dT%H:%M:%SZ", _time.gmtime()),
+            task_id=self.task_id,
+            issue_category=category,
+            action_types_used=list(set(action_types)),
+            resolution=resolution,
+            score=score,
+            sentiment=sentiment,
+            summary=summary,
+            refund_amount=s.refund_issued,
+            escalation_department=s.metadata.escalation_department,
+        )
+
+        self._memory.remember(
+            account_id=s.metadata.account_id,
+            interaction=interaction,
+            customer_name=s.metadata.customer_name,
+            plan=s.metadata.plan,
+        )
 
     # ── String repr ─────────────────────────────────────────────────────────
 

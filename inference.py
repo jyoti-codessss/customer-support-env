@@ -32,6 +32,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from env.environment import CustomerSupportEnv
 from env.models import Action, ActionType
 from tasks.task_definitions import TASKS
+from env.memory import get_memory
 
 # ── Configuration ──────────────────────────────────────────────────────────────
 
@@ -516,6 +517,7 @@ def build_user_prompt(obs, task_context: str, improvement_instructions: str = ""
 
 CUSTOMER: {obs.metadata.get('customer_name', 'Unknown')} | Account: {obs.metadata.get('account_id', 'N/A')} | Plan: {obs.metadata.get('plan', 'N/A')} | Category: {category}
 
+{_memory_section(obs)}
 HISTORY:
 {history_text}
 STATUS: {obs.ticket_status} | TURN: {obs.turn_number}
@@ -523,6 +525,20 @@ STATUS: {obs.ticket_status} | TURN: {obs.turn_number}
 ACTION REQUIRED FOR THIS TURN: {turn_hint}
 {extra}
 Respond with ONLY a JSON object. No other text."""
+
+
+def _memory_section(obs) -> str:
+    """Build memory context section for the prompt if available."""
+    mem_ctx = obs.metadata.get("memory_context", "")
+    if not mem_ctx:
+        return ""
+    lines = ["CUSTOMER MEMORY (use to personalize your response):"]
+    lines.append(mem_ctx)
+    if obs.metadata.get("is_returning_customer"):
+        lines.append("→ This is a RETURNING customer. Use a personalized greeting.")
+    if obs.metadata.get("has_repeat_issue"):
+        lines.append("→ This is a REPEAT issue. Consider escalating faster.")
+    return "\n".join(lines)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -660,6 +676,23 @@ def supervisor_review(decision: AgentDecision, obs) -> SupervisorReview:
 
     violations = []
     corrections = []
+
+    # ── Memory-aware checks ──────────────────────────────────────────────
+    is_returning = obs.metadata.get("is_returning_customer", False)
+    has_repeat_issue = obs.metadata.get("has_repeat_issue", False)
+
+    # Check 0: Returning customer — suggest personalized greeting
+    if (is_returning and obs.turn_number <= 1 and
+        action.action_type == ActionType.RESPOND and
+        not any(kw in response_lower for kw in
+                ["welcome back", "returning", "again", "previous", "last time"])):
+        corrections.append("Add personalized greeting for returning customer")
+
+    # Check 0b: Repeat issue — flag for faster escalation
+    if has_repeat_issue and action.action_type == ActionType.RESPOND:
+        corrections.append(
+            "REPEAT ISSUE detected — consider escalating sooner"
+        )
 
     # Check 1: Fraud refund without identity verification
     if (issue_category == "fraud" and
@@ -994,6 +1027,16 @@ def main():
     with open("baseline_results.json", "w") as f:
         json.dump(output, f, indent=2)
     print(f"  {C_DIM}Results saved to baseline_results.json{C_RESET}")
+
+    # Print memory stats
+    memory = get_memory()
+    mem_stats = memory.stats()
+    print(f"\n  {C_CYAN}🧠 Memory Stats:{C_RESET}")
+    print(f"    Customers remembered: {mem_stats['total_customers_remembered']}")
+    print(f"    Interactions stored:  {mem_stats['total_interactions_stored']}")
+    print(f"    Repeat customers:     {mem_stats['repeat_customers']}")
+    print(f"    Avg sentiment:        {mem_stats['avg_sentiment_label']}")
+
     print(f"\n{C_GREEN}{C_BOLD}🎉 All tasks complete!{C_RESET}\n")
 
 

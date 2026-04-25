@@ -272,6 +272,56 @@ async def report_metrics(request: Request):
         return {"status": "error", "message": str(e)}
 
 
+# ── Memory Endpoints ─────────────────────────────────────────────────────────
+
+from env.memory import get_memory as _get_memory
+
+
+@app.get("/memory/stats")
+def memory_stats():
+    """Return aggregate memory statistics."""
+    memory = _get_memory()
+    return {
+        "status": "ok",
+        "stats": memory.stats(),
+    }
+
+
+@app.get("/memory/{account_id}")
+def get_customer_memory(account_id: str):
+    """Retrieve stored memory for a specific customer."""
+    memory = _get_memory()
+    profile = memory.recall(account_id)
+    if profile is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No memory found for account '{account_id}'."
+        )
+    profiles = memory.all_profiles()
+    return {
+        "status": "ok",
+        "account_id": account_id,
+        "profile": profiles.get(account_id, {}),
+        "context_summary": memory.recall_context(account_id),
+    }
+
+
+@app.delete("/memory/{account_id}")
+def delete_customer_memory(account_id: str):
+    """Delete all stored memory for a specific customer."""
+    memory = _get_memory()
+    deleted = memory.forget(account_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No memory found for account '{account_id}'."
+        )
+    return {
+        "status": "ok",
+        "message": f"Memory for '{account_id}' deleted.",
+    }
+
+
 # ── Mount Gradio Demo ────────────────────────────────────────────────────────
 
 try:
