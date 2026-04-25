@@ -27,6 +27,66 @@ TASK_INFO = {
 
 HEADER = '<div style="text-align:center;padding:20px;background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:16px;margin-bottom:16px;"><h1 style="color:#a5b4fc;margin:0;">CustomerSupportEnv</h1><p style="color:#818cf8;margin:6px 0 0;">3-Layer Multi-Agent | GRPO Trained | 1.000/1.000 Score</p></div>'
 
+API_INFO = """<div style="background:#1e293b;border-radius:12px;padding:20px;font-family:monospace;">
+<h3 style="color:#a5b4fc;margin:0 0 16px;">API Endpoints</h3>
+
+<div style="margin-bottom:12px;padding:10px;background:#0f172a;border-radius:8px;">
+<span style="color:#34d399;font-weight:bold;">POST</span> <span style="color:#f1f5f9;">/reset</span>
+<p style="color:#94a3b8;margin:4px 0 0;font-size:0.9em;">Start new episode. Body: {"task_id": "billing_dispute_easy"}</p>
+</div>
+
+<div style="margin-bottom:12px;padding:10px;background:#0f172a;border-radius:8px;">
+<span style="color:#34d399;font-weight:bold;">POST</span> <span style="color:#f1f5f9;">/step</span>
+<p style="color:#94a3b8;margin:4px 0 0;font-size:0.9em;">Take action. Body: {"session_id": "...", "action_type": "respond", "content": "..."}</p>
+</div>
+
+<div style="margin-bottom:12px;padding:10px;background:#0f172a;border-radius:8px;">
+<span style="color:#34d399;font-weight:bold;">POST</span> <span style="color:#f1f5f9;">/grade</span>
+<p style="color:#94a3b8;margin:4px 0 0;font-size:0.9em;">Get final score. Body: {"session_id": "..."}</p>
+</div>
+
+<div style="margin-bottom:12px;padding:10px;background:#0f172a;border-radius:8px;">
+<span style="color:#818cf8;font-weight:bold;">GET</span> <span style="color:#f1f5f9;">/metrics</span>
+<p style="color:#94a3b8;margin:4px 0 0;font-size:0.9em;">Real-time performance dashboard</p>
+</div>
+
+<div style="margin-bottom:12px;padding:10px;background:#0f172a;border-radius:8px;">
+<span style="color:#818cf8;font-weight:bold;">GET</span> <span style="color:#f1f5f9;">/health</span>
+<p style="color:#94a3b8;margin:4px 0 0;font-size:0.9em;">Health check endpoint</p>
+</div>
+
+<div style="padding:10px;background:#0f172a;border-radius:8px;">
+<span style="color:#818cf8;font-weight:bold;">GET</span> <span style="color:#f1f5f9;">/docs</span>
+<p style="color:#94a3b8;margin:4px 0 0;font-size:0.9em;">Interactive Swagger UI documentation</p>
+</div>
+
+<div style="margin-top:16px;padding:12px;background:#064e3b;border-radius:8px;border:1px solid #34d399;">
+<p style="color:#6ee7b7;margin:0;font-size:0.9em;">Base URL: <strong>https://jyoti-6-customer-support-env.hf.space</strong></p>
+</div>
+</div>"""
+
+SCORES_INFO = """<div style="background:#1e293b;border-radius:12px;padding:20px;">
+<h3 style="color:#a5b4fc;margin:0 0 16px;">Performance Scores</h3>
+<div style="display:flex;justify-content:space-between;padding:10px;background:#0f172a;border-radius:8px;margin-bottom:8px;">
+<span style="color:#e2e8f0;">billing_dispute_easy</span><span style="color:#34d399;font-weight:bold;">1.000</span>
+</div>
+<div style="display:flex;justify-content:space-between;padding:10px;background:#0f172a;border-radius:8px;margin-bottom:8px;">
+<span style="color:#e2e8f0;">technical_outage_medium</span><span style="color:#34d399;font-weight:bold;">1.000</span>
+</div>
+<div style="display:flex;justify-content:space-between;padding:10px;background:#0f172a;border-radius:8px;margin-bottom:8px;">
+<span style="color:#e2e8f0;">fraud_complaint_hard</span><span style="color:#34d399;font-weight:bold;">1.000</span>
+</div>
+<div style="display:flex;justify-content:space-between;padding:10px;background:#0f172a;border-radius:8px;margin-bottom:8px;">
+<span style="color:#e2e8f0;">subscription_cancellation_hard</span><span style="color:#34d399;font-weight:bold;">1.000</span>
+</div>
+<div style="display:flex;justify-content:space-between;padding:10px;background:#0f172a;border-radius:8px;margin-bottom:8px;">
+<span style="color:#e2e8f0;">vip_account_recovery_expert</span><span style="color:#34d399;font-weight:bold;">1.000</span>
+</div>
+<div style="display:flex;justify-content:space-between;padding:14px;background:#064e3b;border-radius:8px;border:2px solid #34d399;">
+<span style="color:#f1f5f9;font-weight:bold;font-size:1.1em;">Average Score</span><span style="color:#34d399;font-weight:900;font-size:1.3em;">1.000</span>
+</div>
+</div>"""
+
 def on_task_select(task_id):
     if not task_id: return "", ""
     diff,desc,msg = TASK_INFO.get(task_id,("?","",""))
@@ -78,18 +138,24 @@ def run_agent(task_id):
 
 with gr.Blocks(title="CustomerSupportEnv Demo") as demo:
     gr.HTML(HEADER)
-    with gr.Row():
-        with gr.Column(scale=1):
-            task_dd=gr.Dropdown(choices=TASK_IDS,label="Select Task",interactive=True)
-            task_info_out=gr.HTML()
-            customer_msg_out=gr.HTML()
-            run_btn=gr.Button("Run Agent",variant="primary",size="lg")
-            chart_out=gr.HTML()
-        with gr.Column(scale=2):
-            steps_out=gr.HTML()
-            score_out=gr.HTML()
-    task_dd.change(fn=on_task_select,inputs=[task_dd],outputs=[task_info_out,customer_msg_out])
-    run_btn.click(fn=run_agent,inputs=[task_dd],outputs=[steps_out,score_out,chart_out])
+    with gr.Tabs():
+        with gr.Tab("Demo"):
+            with gr.Row():
+                with gr.Column(scale=1):
+                    task_dd=gr.Dropdown(choices=TASK_IDS,label="Select Task",interactive=True)
+                    task_info_out=gr.HTML()
+                    customer_msg_out=gr.HTML()
+                    run_btn=gr.Button("Run Agent",variant="primary",size="lg")
+                    chart_out=gr.HTML()
+                with gr.Column(scale=2):
+                    steps_out=gr.HTML()
+                    score_out=gr.HTML()
+            task_dd.change(fn=on_task_select,inputs=[task_dd],outputs=[task_info_out,customer_msg_out])
+            run_btn.click(fn=run_agent,inputs=[task_dd],outputs=[steps_out,score_out,chart_out])
+        with gr.Tab("API Reference"):
+            gr.HTML(API_INFO)
+        with gr.Tab("Scores"):
+            gr.HTML(SCORES_INFO)
 
 if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=7860)
