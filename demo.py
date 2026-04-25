@@ -18,60 +18,122 @@ DEMO_SCRIPTS = {
 }
 
 TASK_INFO = {
-    "billing_dispute_easy": ("Easy","Customer disputes a duplicate billing charge","I was charged twice for my subscription last month! I want my money back NOW!"),
-    "technical_outage_medium": ("Medium","Customer reports service outage","Your service has been down for 3 hours and I am losing business!"),
-    "fraud_complaint_hard": ("Hard","Customer reports unauthorized charges","Someone hacked my account and made $847 in unauthorized purchases!"),
-    "subscription_cancellation_hard": ("Hard","Dissatisfied customer requesting cancellation","I want to cancel immediately. Service quality has gone down."),
-    "vip_account_recovery_expert": ("Expert","VIP customer locked out","I am a premium enterprise customer locked out for 6 hours. Critical emergency!"),
+    "billing_dispute_easy":          ("Easy",   "Customer disputes a duplicate billing charge",       "I was charged twice for my subscription last month! I want my money back NOW!"),
+    "technical_outage_medium":       ("Medium",  "Customer reports service outage",                    "Your service has been down for 3 hours and I am losing business!"),
+    "fraud_complaint_hard":          ("Hard",    "Customer reports unauthorized charges",              "Someone hacked my account and made $847 in unauthorized purchases!"),
+    "subscription_cancellation_hard":("Hard",    "Dissatisfied customer requesting cancellation",      "I want to cancel immediately. Service quality has gone down."),
+    "vip_account_recovery_expert":   ("Expert",  "VIP customer locked out",                            "I am a premium enterprise customer locked out for 6 hours. Critical emergency!"),
 }
 
 HEADER = """<div style="text-align:center;padding:20px;background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:16px;margin-bottom:16px;">
-<h1 style="color:#a5b4fc;margin:0;">CustomerSupportEnv</h1>
-<p style="color:#818cf8;margin:6px 0 0;">3-Layer Multi-Agent - GRPO Trained - 1.000/1.000 Score</p></div>"""
+<h1 style="color:#a5b4fc;margin:0;">&#x1F916; CustomerSupportEnv</h1>
+<p style="color:#818cf8;margin:6px 0 0;">3-Layer Multi-Agent &mdash; GRPO Trained &mdash; 1.000/1.000 Score</p>
+<div style="margin-top:10px;">
+<span style="background:#4f46e5;color:#fff;padding:4px 14px;border-radius:20px;font-size:0.85em;margin:0 4px;">Supervisor Agent</span>
+<span style="background:#7c3aed;color:#fff;padding:4px 14px;border-radius:20px;font-size:0.85em;margin:0 4px;">Specialist Agent</span>
+<span style="background:#6d28d9;color:#fff;padding:4px 14px;border-radius:20px;font-size:0.85em;margin:0 4px;">Quality Agent</span>
+</div></div>"""
 
 def on_task_select(task_id):
     if not task_id:
         return "", ""
-    info = TASK_INFO.get(task_id, ("?","",""))
-    diff, desc, msg = info
+    diff, desc, msg = TASK_INFO.get(task_id, ("?","",""))
     colors = {"Easy":"#34d399","Medium":"#fbbf24","Hard":"#f87171","Expert":"#c084fc"}
     c = colors.get(diff,"#94a3b8")
-    info_html = f'<div style="background:#1e293b;padding:12px;border-radius:8px;"><span style="color:{c};font-weight:bold;">{diff}</span> <span style="color:#94a3b8;margin-left:8px;">{desc}</span></div>'
-    msg_html = f'<div style="background:#1e1a2e;border-left:4px solid #f59e0b;padding:14px;border-radius:8px;"><p style="color:#fbbf24;font-size:0.8em;margin:0 0 4px;">CUSTOMER</p><p style="color:#f1f5f9;margin:0;font-style:italic;">{msg}</p></div>'
+    info_html = f'<div style="background:#1e293b;padding:12px;border-radius:8px;"><span style="color:{c};font-weight:bold;">&#9679; {diff}</span><span style="color:#94a3b8;margin-left:8px;">{desc}</span></div>'
+    msg_html  = f'<div style="background:#1e1a2e;border-left:4px solid #f59e0b;padding:14px;border-radius:8px;"><p style="color:#fbbf24;font-size:0.8em;margin:0 0 4px;">&#128100; CUSTOMER</p><p style="color:#f1f5f9;margin:0;font-style:italic;">{msg}</p></div>'
     return info_html, msg_html
 
 def run_agent(task_id):
     if not task_id:
         return "<p style='color:#f87171;'>Please select a task first.</p>","",""
     scripts = DEMO_SCRIPTS.get(task_id, DEMO_SCRIPTS["billing_dispute_easy"])
-    info = TASK_INFO.get(task_id, ("?","",""))
-    customer_msg = info[2]
-    layers = ["Supervisor Agent","Specialist Agent","Quality Check","Resolution"]
+    diff, desc, customer_msg = TASK_INFO.get(task_id, ("?","","Hello"))
+    layers  = ["Supervisor Agent","Specialist Agent","Quality Check","Resolution"]
     rewards = [0.85, 0.90, 0.95, 1.00]
-    steps_html = f'<div style="background:#1e293b;padding:16px;border-radius:12px;"><h3 style="color:#a5b4fc;">Agent Simulation</h3><div style="background:#0f172a;border-left:4px solid #f59e0b;padding:12px;border-radius:8px;margin-bottom:12px;"><p style="color:#fbbf24;font-size:0.8em;margin:0 0 4px;">CUSTOMER</p><p style="color:#f1f5f9;margin:0;">{customer_msg}</p></div>'
+
+    steps_html = f"""
+<div style="background:#1e293b;padding:16px;border-radius:12px;">
+  <h3 style="color:#a5b4fc;margin:0 0 12px;">&#x1F504; Agent Simulation &mdash; {task_id}</h3>
+  <div style="background:#0f172a;border-left:4px solid #f59e0b;padding:12px;border-radius:8px;margin-bottom:12px;">
+    <p style="color:#fbbf24;font-size:0.8em;margin:0 0 4px;">&#128100; CUSTOMER</p>
+    <p style="color:#f1f5f9;margin:0;font-style:italic;">{customer_msg}</p>
+  </div>"""
+
     for i,(resp,rew,layer) in enumerate(zip(scripts,rewards,layers),1):
         rc = "#34d399" if rew>=0.9 else "#fbbf24"
-        steps_html += f'<div style="background:#1a1a2e;border-left:4px solid #4f46e5;padding:12px;margin:8px 0;border-radius:8px;"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="color:#818cf8;font-weight:bold;">Step {i} - {layer}</span><span style="color:{rc};font-weight:bold;">+{rew:.2f}</span></div><p style="color:#e2e8f0;margin:0;">{resp}</p></div>'
-    steps_html += "</div>"
-    score_html = '<div style="text-align:center;background:#064e3b;border:2px solid #34d399;border-radius:16px;padding:24px;margin-bottom:16px;"><div style="font-size:3.5em;font-weight:900;color:#34d399;">1.000</div><div style="color:#6ee7b7;">PERFECT SCORE</div></div><div style="background:#1e293b;border-radius:12px;padding:16px;"><h4 style="color:#a5b4fc;margin:0 0 10px;">Reward Breakdown</h4><table style="width:100%;color:#e2e8f0;"><tr><td>JSON Format</td><td style="text-align:right;color:#34d399;">1.00</td></tr><tr><td>Empathy</td><td style="text-align:right;color:#34d399;">1.00</td></tr><tr><td>Action Taken</td><td style="text-align:right;color:#34d399;">1.00</td></tr><tr><td>Resolution</td><td style="text-align:right;color:#34d399;">1.00</td></tr><tr style="border-top:2px solid #334155;font-weight:bold;"><td>Final Score</td><td style="text-align:right;color:#34d399;font-size:1.2em;">1.000</td></tr></table></div>'
-    fig,ax = plt.subplots(figsize=(5,3),facecolor="#0f0f1a")
+        steps_html += f"""
+  <div style="background:#1a1a2e;border-left:4px solid #4f46e5;padding:12px;margin:8px 0;border-radius:8px;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+      <span style="color:#818cf8;font-weight:bold;">Step {i} &mdash; {layer}</span>
+      <span style="color:{rc};font-weight:bold;">+{rew:.2f}</span>
+    </div>
+    <p style="color:#e2e8f0;margin:0;">{resp}</p>
+  </div>"""
+    steps_html += "\n</div>"
+
+    score_html = """
+<div style="text-align:center;background:#064e3b;border:2px solid #34d399;border-radius:16px;padding:24px;margin-bottom:16px;">
+  <div style="font-size:3.5em;font-weight:900;color:#34d399;">1.000</div>
+  <div style="color:#6ee7b7;font-size:1.1em;margin-top:4px;">PERFECT SCORE &#10024;</div>
+</div>
+<div style="background:#1e293b;border-radius:12px;padding:16px;">
+  <h4 style="color:#a5b4fc;margin:0 0 12px;">&#x1F4CA; Reward Breakdown</h4>
+  <table style="width:100%;border-collapse:collapse;color:#e2e8f0;font-size:0.95em;">
+    <thead>
+      <tr style="border-bottom:1px solid #334155;">
+        <th style="text-align:left;padding:8px;color:#94a3b8;">Criterion</th>
+        <th style="text-align:right;padding:8px;color:#94a3b8;">Score</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #1e293b;">
+        <td style="padding:8px;">&#x2705; JSON Format</td>
+        <td style="text-align:right;padding:8px;color:#34d399;font-weight:bold;">1.00</td>
+      </tr>
+      <tr style="border-bottom:1px solid #1e293b;">
+        <td style="padding:8px;">&#x1F499; Empathy</td>
+        <td style="text-align:right;padding:8px;color:#34d399;font-weight:bold;">1.00</td>
+      </tr>
+      <tr style="border-bottom:1px solid #1e293b;">
+        <td style="padding:8px;">&#x26A1; Action Taken</td>
+        <td style="text-align:right;padding:8px;color:#34d399;font-weight:bold;">1.00</td>
+      </tr>
+      <tr style="border-bottom:1px solid #1e293b;">
+        <td style="padding:8px;">&#x1F3AF; Resolution</td>
+        <td style="text-align:right;padding:8px;color:#34d399;font-weight:bold;">1.00</td>
+      </tr>
+      <tr style="border-top:2px solid #334155;">
+        <td style="padding:10px;font-weight:bold;color:#f1f5f9;">&#x1F3C6; Final Score</td>
+        <td style="text-align:right;padding:10px;color:#34d399;font-size:1.3em;font-weight:900;">1.000</td>
+      </tr>
+    </tbody>
+  </table>
+</div>"""
+
+    # Chart
+    fig, ax = plt.subplots(figsize=(5,3), facecolor="#0f0f1a")
     ax.set_facecolor("#1e293b")
-    ax.bar(["Baseline","Trained"],[0.268,1.000],color=["#f87171","#34d399"],width=0.5)
-    ax.set_ylim(0,1.2)
-    ax.set_title("Reward Improvement",color="#a5b4fc")
+    bars = ax.bar(["Baseline\n(Untrained)","Trained\n(GRPO)"], [0.268,1.000], color=["#f87171","#34d399"], width=0.5, edgecolor="#334155")
+    for bar,val in zip(bars,[0.268,1.000]):
+        ax.text(bar.get_x()+bar.get_width()/2, bar.get_height()+0.02, f"{val:.3f}", ha="center", va="bottom", color="#f1f5f9", fontweight="bold", fontsize=11)
+    ax.set_ylim(0,1.25)
+    ax.set_ylabel("Score", color="#94a3b8")
+    ax.set_title("Reward Improvement (+273%)", color="#a5b4fc", fontweight="bold")
     ax.tick_params(colors="#94a3b8")
     [s.set_color("#334155") for s in ax.spines.values()]
     plt.tight_layout()
-    buf=io.BytesIO(); fig.savefig(buf,format="png",dpi=100,bbox_inches="tight"); plt.close(fig); buf.seek(0)
-    b64=base64.b64encode(buf.read()).decode()
-    chart = f'<img src="data:image/png;base64,{b64}" style="width:100%;border-radius:8px;"/>'
+    buf = io.BytesIO(); fig.savefig(buf, format="png", dpi=100, bbox_inches="tight"); plt.close(fig); buf.seek(0)
+    b64 = base64.b64encode(buf.read()).decode()
+    chart = f'<img src="data:image/png;base64,{b64}" style="width:100%;border-radius:8px;margin-top:12px;"/>'
+
     return steps_html, score_html, chart
 
 with gr.Blocks(title="CustomerSupportEnv Demo") as demo:
     gr.HTML(HEADER)
     with gr.Row():
         with gr.Column(scale=1):
-            task_dd = gr.Dropdown(choices=TASK_IDS, label="Select Task", interactive=True)
+            task_dd = gr.Dropdown(choices=TASK_IDS, label="Select Task", info="Choose a customer support scenario", interactive=True)
             task_info_out = gr.HTML()
             customer_msg_out = gr.HTML()
             run_btn = gr.Button("Run Agent", variant="primary", size="lg")
