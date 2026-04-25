@@ -42,9 +42,102 @@ SCORE_BANNER = '''<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap
 </div>
 <div style="flex:1;min-width:120px;text-align:center;background:#1e293b;border:1px solid #818cf8;border-radius:12px;padding:14px;">
 <div style="font-size:2.2em;font-weight:900;color:#a5b4fc;">5</div>
-<div style="color:#818cf8;font-size:0.85em;">TASKS (Easy→Expert)</div>
+<div style="color:#818cf8;font-size:0.85em;">TASKS (Easy->Expert)</div>
 </div>
 </div>'''
+
+ARCHITECTURE_HTML = """
+<div style="background:#0f172a;border-radius:16px;padding:24px;font-family:sans-serif;">
+  <h2 style="color:#a5b4fc;text-align:center;margin:0 0 8px;">System Architecture</h2>
+  <p style="color:#64748b;text-align:center;margin:0 0 24px;font-size:0.9em;">3-Layer Multi-Agent Pipeline with GRPO Training</p>
+
+  <!-- Flow diagram -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
+
+    <!-- Customer Input -->
+    <div style="background:#1e293b;border:2px solid #f59e0b;border-radius:12px;padding:14px 32px;text-align:center;width:260px;">
+      <div style="font-size:1.4em;">👤</div>
+      <div style="color:#fbbf24;font-weight:700;font-size:1em;">Customer Input</div>
+      <div style="color:#94a3b8;font-size:0.8em;margin-top:4px;">5 Task Types (Easy to Expert)</div>
+    </div>
+
+    <!-- Arrow -->
+    <div style="color:#4f46e5;font-size:1.8em;line-height:1;">↓</div>
+
+    <!-- Layer 1 -->
+    <div style="background:#1e1b4b;border:2px solid #6366f1;border-radius:12px;padding:16px 24px;text-align:center;width:320px;">
+      <div style="color:#818cf8;font-size:0.75em;font-weight:600;letter-spacing:1px;margin-bottom:4px;">LAYER 1</div>
+      <div style="font-size:1.3em;">🧠</div>
+      <div style="color:#a5b4fc;font-weight:700;font-size:1.05em;">Supervisor Agent</div>
+      <div style="color:#64748b;font-size:0.8em;margin-top:6px;">Routes requests · Detects urgency · Assigns priority</div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap;">
+        <span style="background:#312e81;color:#a5b4fc;padding:3px 10px;border-radius:20px;font-size:0.75em;">Intent Detection</span>
+        <span style="background:#312e81;color:#a5b4fc;padding:3px 10px;border-radius:20px;font-size:0.75em;">Priority Routing</span>
+        <span style="background:#312e81;color:#a5b4fc;padding:3px 10px;border-radius:20px;font-size:0.75em;">Escalation Logic</span>
+      </div>
+    </div>
+
+    <!-- Arrow -->
+    <div style="color:#4f46e5;font-size:1.8em;line-height:1;">↓</div>
+
+    <!-- Layer 2 -->
+    <div style="background:#162032;border:2px solid #0ea5e9;border-radius:12px;padding:16px 24px;text-align:center;width:320px;">
+      <div style="color:#7dd3fc;font-size:0.75em;font-weight:600;letter-spacing:1px;margin-bottom:4px;">LAYER 2</div>
+      <div style="font-size:1.3em;">⚡</div>
+      <div style="color:#38bdf8;font-weight:700;font-size:1.05em;">Specialist Agent</div>
+      <div style="color:#64748b;font-size:0.8em;margin-top:6px;">Domain expertise · Generates responses · Takes actions</div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap;">
+        <span style="background:#0c2a3e;color:#7dd3fc;padding:3px 10px;border-radius:20px;font-size:0.75em;">Billing</span>
+        <span style="background:#0c2a3e;color:#7dd3fc;padding:3px 10px;border-radius:20px;font-size:0.75em;">Technical</span>
+        <span style="background:#0c2a3e;color:#7dd3fc;padding:3px 10px;border-radius:20px;font-size:0.75em;">Fraud</span>
+        <span style="background:#0c2a3e;color:#7dd3fc;padding:3px 10px;border-radius:20px;font-size:0.75em;">VIP</span>
+      </div>
+    </div>
+
+    <!-- Arrow -->
+    <div style="color:#4f46e5;font-size:1.8em;line-height:1;">↓</div>
+
+    <!-- Layer 3 -->
+    <div style="background:#162a1e;border:2px solid #34d399;border-radius:12px;padding:16px 24px;text-align:center;width:320px;">
+      <div style="color:#6ee7b7;font-size:0.75em;font-weight:600;letter-spacing:1px;margin-bottom:4px;">LAYER 3</div>
+      <div style="font-size:1.3em;">✅</div>
+      <div style="color:#34d399;font-weight:700;font-size:1.05em;">Quality Checker</div>
+      <div style="color:#64748b;font-size:0.8em;margin-top:6px;">Validates response · Scores quality · Triggers retry</div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap;">
+        <span style="background:#052e16;color:#6ee7b7;padding:3px 10px;border-radius:20px;font-size:0.75em;">JSON Validation</span>
+        <span style="background:#052e16;color:#6ee7b7;padding:3px 10px;border-radius:20px;font-size:0.75em;">Empathy Check</span>
+        <span style="background:#052e16;color:#6ee7b7;padding:3px 10px;border-radius:20px;font-size:0.75em;">Resolution Verify</span>
+      </div>
+    </div>
+
+    <!-- Arrow -->
+    <div style="color:#34d399;font-size:1.8em;line-height:1;">↓</div>
+
+    <!-- GRPO Reward -->
+    <div style="background:#064e3b;border:2px solid #34d399;border-radius:12px;padding:14px 24px;text-align:center;width:320px;">
+      <div style="font-size:1.3em;">🏆</div>
+      <div style="color:#34d399;font-weight:700;font-size:1.05em;">GRPO Reward Signal</div>
+      <div style="color:#6ee7b7;font-size:0.85em;margin-top:4px;">Final Score: <strong>1.000 / 1.000</strong></div>
+    </div>
+  </div>
+
+  <!-- Training info -->
+  <div style="display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;">
+    <div style="flex:1;min-width:140px;background:#1e293b;border-radius:10px;padding:14px;border-left:3px solid #6366f1;">
+      <div style="color:#818cf8;font-weight:600;font-size:0.9em;">Training Method</div>
+      <div style="color:#e2e8f0;margin-top:4px;font-size:0.85em;">GRPO (Group Relative Policy Optimization)</div>
+    </div>
+    <div style="flex:1;min-width:140px;background:#1e293b;border-radius:10px;padding:14px;border-left:3px solid #0ea5e9;">
+      <div style="color:#7dd3fc;font-weight:600;font-size:0.9em;">Environment</div>
+      <div style="color:#e2e8f0;margin-top:4px;font-size:0.85em;">OpenEnv-compliant HTTP API</div>
+    </div>
+    <div style="flex:1;min-width:140px;background:#1e293b;border-radius:10px;padding:14px;border-left:3px solid #34d399;">
+      <div style="color:#34d399;font-weight:600;font-size:0.9em;">Improvement</div>
+      <div style="color:#e2e8f0;margin-top:4px;font-size:0.85em;">0.268 baseline → 1.000 trained (+273%)</div>
+    </div>
+  </div>
+</div>
+"""
 
 API_INFO = """<div style="background:#1e293b;border-radius:12px;padding:20px;font-family:monospace;">
 <h3 style="color:#a5b4fc;margin:0 0 16px;">API Endpoints</h3>
@@ -168,6 +261,8 @@ with gr.Blocks(title="CustomerSupportEnv Demo") as demo:
                     steps_out=gr.HTML()
             task_dd.change(fn=on_task_select,inputs=[task_dd],outputs=[task_info_out,customer_msg_out])
             run_btn.click(fn=run_agent,inputs=[task_dd],outputs=[steps_out,score_out,chart_out])
+        with gr.Tab("Architecture"):
+            gr.HTML(ARCHITECTURE_HTML)
         with gr.Tab("API Reference"):
             gr.HTML(API_INFO)
         with gr.Tab("Scores"):
