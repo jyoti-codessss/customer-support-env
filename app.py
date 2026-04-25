@@ -270,3 +270,13 @@ async def report_metrics(request: Request):
         return {"status": "ok", "message": "Metrics updated"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+
+# ── Mount Gradio Demo ────────────────────────────────────────────────────────
+
+try:
+    import gradio as gr
+    from demo import demo as gradio_demo
+    app = gr.mount_gradio_app(app, gradio_demo, path="/demo")
+except ImportError:
+    pass  # gradio not installed — skip demo mount

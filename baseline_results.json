@@ -104,9 +104,9 @@
         1.0
       ],
       "improvement_delta": 0.0,
-      "turns_used": 15,
+      "turns_used": 4,
       "supervisor_interventions": 0,
-      "avg_confidence": 0.51,
+      "avg_confidence": 0.9,
       "breakdown": {
         "multi_method_verification": 3,
         "account_unlocked": true,
@@ -138,7 +138,7 @@
       "subscription_cancellation_hard": 0.0,
       "vip_account_recovery_expert": 0.0
     },
-    "agent_confidence_avg": 0.705,
-    "uptime_seconds": 17.4
+    "agent_confidence_avg": 0.9,
+    "uptime_seconds": 14.6
   }
 }
