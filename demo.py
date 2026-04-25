@@ -179,7 +179,16 @@ def on_task_select(task_id):
         sentiment_label = "satisfied" if sentiment_score >= 0.7 else "neutral" if sentiment_score >= 0.4 else "frustrated"
         sentiment_color = "#34d399" if sentiment_score >= 0.7 else "#fbbf24" if sentiment_score >= 0.4 else "#f87171"
         repeat = mem.get("repeat_issues", [])
-        mem_html = f'<div style="background:#1a1a3e;border:1px solid #c084fc;border-radius:10px;padding:14px;margin-top:8px;"><p style="color:#c084fc;font-weight:700;font-size:0.85em;margin:0 0 8px;">WORLD MODEL - Customer State Loaded</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;"><span style="background:#2e1065;color:#e2e8f0;padding:3px 10px;border-radius:8px;font-size:0.8em;">Contacts: {contacts}</span><span style="background:#2e1065;color:{sentiment_color};padding:3px 10px;border-radius:8px;font-size:0.8em;">Sentiment: {sentiment_label}</span>{"<span style='background:#7f1d1d;color:#fca5a5;padding:3px 10px;border-radius:8px;font-size:0.8em;'>Repeat Issue Detected</span>" if repeat else "<span style='background:#052e16;color:#6ee7b7;padding:3px 10px;border-radius:8px;font-size:0.8em;'>No Repeat Issues</span>"}</div>'
+        repeat_tag = "<span style='background:#7f1d1d;color:#fca5a5;padding:3px 10px;border-radius:8px;font-size:0.8em;'>Repeat Issue Detected</span>" if repeat else "<span style='background:#052e16;color:#6ee7b7;padding:3px 10px;border-radius:8px;font-size:0.8em;'>No Repeat Issues</span>"
+        mem_html = (
+            '<div style="background:#1a1a3e;border:1px solid #c084fc;border-radius:10px;padding:14px;margin-top:8px;">'
+            '<p style="color:#c084fc;font-weight:700;font-size:0.85em;margin:0 0 8px;">WORLD MODEL - Customer State Loaded</p>'
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">'
+            f'<span style="background:#2e1065;color:#e2e8f0;padding:3px 10px;border-radius:8px;font-size:0.8em;">Contacts: {contacts}</span>'
+            f'<span style="background:#2e1065;color:{sentiment_color};padding:3px 10px;border-radius:8px;font-size:0.8em;">Sentiment: {sentiment_label}</span>'
+            + repeat_tag +
+            '</div>'
+        )
         history = mem.get("history", [])
         if history:
             mem_html += '<p style="color:#94a3b8;font-size:0.78em;margin:6px 0 4px;">Recent Interactions:</p>'
