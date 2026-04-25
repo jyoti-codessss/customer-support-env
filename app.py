@@ -96,10 +96,10 @@ def get_env(session_id: str) -> CustomerSupportEnv:
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 @app.get("/", response_class=RedirectResponse)
-@app.get("/home", response_class=HTMLResponse)
+@app.get("/")
 async def root():
-    return """
-    <html><body style="font-family:monospace;background:#0f0f1a;color:#a5b4fc;padding:40px;">
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/demo")
     <h1>🤖 CustomerSupportEnv v2.0.0</h1>
     <p>3-Layer Multi-Agent Customer Support RL Environment</p>
     <h3>Endpoints:</h3>
