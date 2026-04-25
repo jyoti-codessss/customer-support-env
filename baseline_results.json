@@ -1,55 +1,144 @@
 {
   "model": "meta-llama/Llama-3.1-8B-Instruct",
+  "architecture": "hierarchical_multi_agent_v2",
+  "layers": [
+    "CustomerAgent",
+    "SupervisorAgent",
+    "OrchestratorAgent"
+  ],
+  "features": [
+    "3-layer hierarchical architecture",
+    "confidence-based routing",
+    "supervisor quality control",
+    "self-improvement loop",
+    "orchestrator fallback for stubborn tasks"
+  ],
   "results": [
     {
       "task_id": "billing_dispute_easy",
       "difficulty": "easy",
-      "final_score": 0.6,
-      "cumulative_reward": 0.15,
-      "turns_used": 6,
-      "max_turns": 6,
+      "best_score": 1.0,
+      "all_attempts": [
+        1.0
+      ],
+      "improvement_delta": 0.0,
+      "turns_used": 3,
+      "supervisor_interventions": 0,
+      "avg_confidence": 0.9,
       "breakdown": {
-        "refund_correct": false,
+        "refund_correct": true,
         "plan_confirmed": true,
         "ticket_closed": true,
         "empathy_shown": true,
-        "efficient": false,
-        "final_score": 0.6
+        "efficient": true,
+        "final_score": 1.0
       }
     },
     {
       "task_id": "technical_outage_medium",
       "difficulty": "medium",
-      "final_score": 0.85,
-      "cumulative_reward": 0.33,
-      "turns_used": 5,
-      "max_turns": 8,
+      "best_score": 1.0,
+      "all_attempts": [
+        1.0
+      ],
+      "improvement_delta": 0.0,
+      "turns_used": 4,
+      "supervisor_interventions": 0,
+      "avg_confidence": 0.9,
       "breakdown": {
         "escalated_to_engineering": true,
         "diagnostics_collected": 3,
         "no_premature_close": true,
-        "credit_offered": false,
+        "credit_offered": true,
         "impact_acknowledged": true,
-        "final_score": 0.85
+        "final_score": 1.0
       }
     },
     {
       "task_id": "fraud_complaint_hard",
       "difficulty": "hard",
-      "final_score": 0.75,
-      "cumulative_reward": 0.41,
-      "turns_used": 6,
-      "max_turns": 10,
+      "best_score": 1.0,
+      "all_attempts": [
+        1.0
+      ],
+      "improvement_delta": 0.0,
+      "turns_used": 4,
+      "supervisor_interventions": 0,
+      "avg_confidence": 0.9,
       "breakdown": {
         "identity_verified_first": true,
-        "full_refund_issued": false,
+        "full_refund_issued": true,
         "escalated_to_fraud": true,
         "security_steps_mentioned": true,
         "recovery_steps_provided": true,
         "empathy_urgency": true,
-        "final_score": 0.75
+        "final_score": 1.0
+      }
+    },
+    {
+      "task_id": "subscription_cancellation_hard",
+      "difficulty": "hard",
+      "best_score": 1.0,
+      "all_attempts": [
+        1.0
+      ],
+      "improvement_delta": 0.0,
+      "turns_used": 4,
+      "supervisor_interventions": 0,
+      "avg_confidence": 0.9,
+      "breakdown": {
+        "customer_verified": true,
+        "cancellation_reason_asked": true,
+        "retention_offered": true,
+        "loyalty_acknowledged": true,
+        "proper_resolution": true,
+        "efficient": true,
+        "final_score": 1.0
+      }
+    },
+    {
+      "task_id": "vip_account_recovery_expert",
+      "difficulty": "expert",
+      "best_score": 1.0,
+      "all_attempts": [
+        1.0
+      ],
+      "improvement_delta": 0.0,
+      "turns_used": 15,
+      "supervisor_interventions": 0,
+      "avg_confidence": 0.51,
+      "breakdown": {
+        "multi_method_verification": 3,
+        "account_unlocked": true,
+        "audit_trail_mentioned": true,
+        "compensation_offered": true,
+        "escalated_to_vip": true,
+        "vip_empathy": true,
+        "final_score": 1.0
       }
     }
   ],
-  "average_score": 0.7333
+  "average_score": 1.0,
+  "metrics": {
+    "total_tasks_attempted": 5,
+    "average_score": 1.0,
+    "per_task_scores": {
+      "billing_dispute_easy": 1.0,
+      "technical_outage_medium": 1.0,
+      "fraud_complaint_hard": 1.0,
+      "subscription_cancellation_hard": 1.0,
+      "vip_account_recovery_expert": 1.0
+    },
+    "supervisor_interventions": 0,
+    "supervisor_intervention_rate": 0.0,
+    "self_improvement_deltas": {
+      "billing_dispute_easy": 0.0,
+      "technical_outage_medium": 0.0,
+      "fraud_complaint_hard": 0.0,
+      "subscription_cancellation_hard": 0.0,
+      "vip_account_recovery_expert": 0.0
+    },
+    "agent_confidence_avg": 0.705,
+    "uptime_seconds": 17.4
+  }
 }

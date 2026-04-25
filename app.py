@@ -2,13 +2,18 @@
 app.py — FastAPI server exposing CustomerSupportEnv as an HTTP API.
 Uses file-based session persistence for HuggingFace Spaces.
 FIXED: /reset accepts empty body (task_id optional, defaults to 'billing_dispute_easy')
+
+Includes:
+  - /metrics    — Real-time agent performance dashboard
+  - /metrics/report — Accepts metrics from inference.py
 """
 
 import uuid
 import os
 import pickle
 import json
-from typing import Dict, Optional
+import time
+from typing import Dict, Optional, Any, List
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -19,8 +24,8 @@ from tasks.task_definitions import TASKS
 
 app = FastAPI(
     title="CustomerSupportEnv",
-    description="OpenEnv-compliant Customer Support Agent simulation environment",
-    version="1.0.0",
+    description="OpenEnv-compliant Customer Support Agent simulation environment with Advanced Multi-Agent Metrics",
+    version="2.0.0",
 )
 
 app.add_middleware(
@@ -35,6 +40,27 @@ os.makedirs(SESSION_DIR, exist_ok=True)
 
 _memory_cache: Dict[str, CustomerSupportEnv] = {}
 
+# ── Metrics Store ────────────────────────────────────────────────────────────
+
+_metrics_store: Dict[str, Any] = {
+    "total_tasks_attempted": 0,
+    "tasks_completed": 0,
+    "average_score": 0.0,
+    "per_task_scores": {},
+    "supervisor_interventions": 0,
+    "supervisor_intervention_rate": 0.0,
+    "self_improvement_deltas": {},
+    "agent_confidence_avg": 0.0,
+    "uptime_seconds": 0.0,
+    "last_updated": None,
+    "architecture": "hierarchical_multi_agent_v2",
+    "layers": ["CustomerAgent (L1)", "SupervisorAgent (L2)", "OrchestratorAgent (L3)"],
+}
+
+_server_start_time = time.time()
+
+
+# ── Session Management ───────────────────────────────────────────────────────
 
 def _session_path(session_id: str) -> str:
     safe = session_id.replace("-", "")[:64]
@@ -80,13 +106,16 @@ class StepRequest(BaseModel):
     action: Action
 
 
+# ── Core Endpoints (UNCHANGED) ──────────────────────────────────────────────
+
 @app.get("/")
 def root():
     return {
         "name": "CustomerSupportEnv",
-        "version": "1.0.0",
+        "version": "2.0.0",
+        "architecture": "Hierarchical Multi-Agent (3-Layer)",
         "tasks": list(TASKS.keys()),
-        "endpoints": ["/reset", "/step", "/state", "/grade", "/tasks", "/health"],
+        "endpoints": ["/reset", "/step", "/state", "/grade", "/tasks", "/health", "/metrics"],
     }
 
 
@@ -188,3 +217,56 @@ def grade(session_id: str):
         raise HTTPException(status_code=404, detail="Session not found.")
     score, breakdown = env.grade()
     return {"score": score, "breakdown": breakdown}
+
+
+# ── Metrics Endpoints (NEW) ─────────────────────────────────────────────────
+
+@app.get("/metrics")
+def get_metrics():
+    """
+    Real-time agent performance dashboard.
+    Returns metrics from the multi-agent inference system.
+    """
+    _metrics_store["uptime_seconds"] = round(time.time() - _server_start_time, 1)
+    return {
+        "status": "ok",
+        "architecture": _metrics_store["architecture"],
+        "layers": _metrics_store["layers"],
+        "metrics": {
+            "total_tasks_attempted": _metrics_store["total_tasks_attempted"],
+            "tasks_completed": _metrics_store["tasks_completed"],
+            "average_score": _metrics_store["average_score"],
+            "per_task_scores": _metrics_store["per_task_scores"],
+            "supervisor_interventions": _metrics_store["supervisor_interventions"],
+            "supervisor_intervention_rate": _metrics_store["supervisor_intervention_rate"],
+            "self_improvement_deltas": _metrics_store["self_improvement_deltas"],
+            "agent_confidence_avg": _metrics_store["agent_confidence_avg"],
+        },
+        "server": {
+            "uptime_seconds": _metrics_store["uptime_seconds"],
+            "tasks_available": list(TASKS.keys()),
+            "total_tasks_available": len(TASKS),
+            "last_updated": _metrics_store["last_updated"],
+        }
+    }
+
+
+@app.post("/metrics/report")
+async def report_metrics(request: Request):
+    """
+    Accept metrics from the inference.py multi-agent system.
+    Called after each task completes.
+    """
+    try:
+        body = await request.body()
+        if body:
+            data = json.loads(body)
+            if isinstance(data, dict):
+                for key in _metrics_store:
+                    if key in data:
+                        _metrics_store[key] = data[key]
+                _metrics_store["last_updated"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+                _metrics_store["tasks_completed"] = _metrics_store.get("total_tasks_attempted", 0)
+        return {"status": "ok", "message": "Metrics updated"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}

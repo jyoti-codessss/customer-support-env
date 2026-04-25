@@ -2,6 +2,13 @@
 Programmatic graders for each task.
 Each grader receives the final EnvironmentState and returns a score in [0.0, 1.0].
 Grading is deterministic and reproducible.
+
+Tasks:
+  1. billing_dispute_easy        — Refund accuracy, plan confirmation, empathy
+  2. technical_outage_medium     — Diagnostics, escalation, compensation
+  3. fraud_complaint_hard        — Identity verification order, refund, security
+  4. subscription_cancellation_hard — Retention, loyalty, negotiation
+  5. vip_account_recovery_expert — Multi-verify, audit, VIP escalation
 """
 
 from __future__ import annotations
@@ -243,10 +250,188 @@ def grade_fraud_complaint_hard(state: EnvironmentState) -> Tuple[float, dict]:
     return round(score, 3), breakdown
 
 
+# ── HARD Grader: Subscription Cancellation ───────────────────────────────────
+
+def grade_subscription_cancellation_hard(state: EnvironmentState) -> Tuple[float, dict]:
+    """
+    Scoring rubric (total = 1.0):
+      0.15 — Customer identity verified
+      0.20 — Cancellation reason explored
+      0.25 — Retention offer made (discount/downgrade/free months)
+      0.15 — Loyalty acknowledged (2-year customer)
+      0.15 — Proper resolution (cancel processed OR retention confirmed)
+      0.10 — Efficiency (≤ 8 turns)
+    """
+    score = 0.0
+    breakdown = {}
+
+    agent_texts = _agent_turns(state)
+    all_agent = " ".join(agent_texts).lower()
+
+    # 0.15 — Customer verified
+    verified = _keyword_present(agent_texts, [
+        "verify", "confirm", "account", "david", "acc-12750",
+        "identity", "on file", "can you confirm"
+    ])
+    breakdown["customer_verified"] = verified
+    if verified:
+        score += 0.15
+
+    # 0.20 — Cancellation reason asked/explored
+    reason_explored = _keyword_present(agent_texts, [
+        "why", "reason", "what made you", "understand why",
+        "what's prompting", "help me understand", "can you share",
+        "features", "team size", "expensive", "cost"
+    ])
+    breakdown["cancellation_reason_asked"] = reason_explored
+    if reason_explored:
+        score += 0.20
+
+    # 0.25 — Retention offer made
+    retention = _keyword_present(agent_texts, [
+        "discount", "downgrade", "free month", "offer", "retention",
+        "special price", "reduced rate", "business plan",
+        "save", "keep you", "stay with us", "$199",
+        "lower tier", "adjusted", "deal", "incentive", "promo"
+    ])
+    breakdown["retention_offered"] = retention
+    if retention:
+        score += 0.25
+
+    # 0.15 — Loyalty acknowledged
+    loyalty = _keyword_present(agent_texts, [
+        "loyal", "2 year", "two year", "long time", "valued",
+        "appreciate", "thank you for being", "loyalty",
+        "years with us", "dedication"
+    ])
+    breakdown["loyalty_acknowledged"] = loyalty
+    if loyalty:
+        score += 0.15
+
+    # 0.15 — Proper resolution (either cancel or retain)
+    resolved = (
+        state.ticket_status in (TicketStatus.RESOLVED, TicketStatus.CLOSED) or
+        _keyword_present(agent_texts, [
+            "cancel", "process", "confirm cancel", "effective",
+            "retained", "stay", "keep your", "updated your plan"
+        ])
+    )
+    breakdown["proper_resolution"] = resolved
+    if resolved:
+        score += 0.15
+
+    # 0.10 — Efficiency (≤ 8 turns)
+    efficient = state.turn_number <= 8
+    breakdown["efficient"] = efficient
+    if efficient:
+        score += 0.10
+
+    breakdown["final_score"] = round(score, 3)
+    return round(score, 3), breakdown
+
+
+# ── EXPERT Grader: VIP Account Recovery ──────────────────────────────────────
+
+def grade_vip_account_recovery_expert(state: EnvironmentState) -> Tuple[float, dict]:
+    """
+    Scoring rubric (total = 1.0):
+      0.20 — Multi-method identity verification (≥ 2 methods)
+      0.20 — Account unlock/recovery steps mentioned
+      0.15 — Audit trail / security review mentioned
+      0.15 — Compensation offered (service credit/refund)
+      0.20 — Escalated to VIP / Priority team
+      0.10 — VIP-level empathy + urgency
+    """
+    score = 0.0
+    breakdown = {}
+
+    agent_texts = _agent_turns(state)
+    all_agent = " ".join(agent_texts).lower()
+
+    # 0.20 — Multi-method identity verification
+    verify_methods = [
+        any(kw in all_agent for kw in ["email", "domain", "company email", "@"]),
+        any(kw in all_agent for kw in ["phone", "call", "mobile", "number on file"]),
+        any(kw in all_agent for kw in ["last 4", "card", "payment method", "credit card"]),
+        any(kw in all_agent for kw in ["date of birth", "dob", "birthday"]),
+        any(kw in all_agent for kw in ["account creation", "when did you", "sign up date"]),
+        any(kw in all_agent for kw in ["verify", "confirm your identity", "confirm you are"]),
+    ]
+    method_count = sum(verify_methods)
+    breakdown["multi_method_verification"] = method_count
+    if method_count >= 2:
+        score += 0.20
+    elif method_count == 1:
+        score += 0.10
+
+    # 0.20 — Account unlock/recovery
+    unlocked = _keyword_present(agent_texts, [
+        "unlock", "restore", "recover", "regain access",
+        "reset", "reactivate", "re-enable", "access restored",
+        "interim access", "temporary access", "workaround"
+    ])
+    breakdown["account_unlocked"] = unlocked
+    if unlocked:
+        score += 0.20
+
+    # 0.15 — Audit trail / security review
+    audit = _keyword_present(agent_texts, [
+        "audit", "security review", "investigate", "activity log",
+        "trail", "review recent", "changes made", "unauthorized changes",
+        "forensic", "breach investigation", "security team will review"
+    ])
+    breakdown["audit_trail_mentioned"] = audit
+    if audit:
+        score += 0.15
+
+    # 0.15 — Compensation offered
+    compensation = (
+        state.refund_issued > 0 or
+        _keyword_present(agent_texts, [
+            "credit", "compensat", "refund", "free month",
+            "discount", "waive", "service credit", "reimburse"
+        ])
+    )
+    breakdown["compensation_offered"] = compensation
+    if compensation:
+        score += 0.15
+
+    # 0.20 — Escalated to VIP/Priority team
+    vip_escalated = (
+        state.escalated and
+        _keyword_present(agent_texts, [
+            "vip", "priority", "premium support", "account management",
+            "senior engineer", "executive support", "dedicated team"
+        ])
+    ) or _keyword_present(agent_texts, [
+        "escalat", "priority team", "vip support", "vip team",
+        "senior", "specialist"
+    ])
+    breakdown["escalated_to_vip"] = vip_escalated
+    if vip_escalated:
+        score += 0.20
+
+    # 0.10 — VIP-level empathy + urgency
+    vip_empathy = _keyword_present(agent_texts, [
+        "sorry", "apologize", "understand how critical",
+        "highest priority", "immediately", "right away", "urgent",
+        "top priority", "unacceptable", "deeply sorry",
+        "platinum", "valued", "premium"
+    ])
+    breakdown["vip_empathy"] = vip_empathy
+    if vip_empathy:
+        score += 0.10
+
+    breakdown["final_score"] = round(score, 3)
+    return round(score, 3), breakdown
+
+
 # ── Grader Registry ──────────────────────────────────────────────────────────
 
 GRADERS = {
     "billing_dispute_easy": grade_billing_dispute_easy,
     "technical_outage_medium": grade_technical_outage_medium,
     "fraud_complaint_hard": grade_fraud_complaint_hard,
+    "subscription_cancellation_hard": grade_subscription_cancellation_hard,
+    "vip_account_recovery_expert": grade_vip_account_recovery_expert,
 }
