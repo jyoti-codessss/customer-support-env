@@ -95,15 +95,15 @@ def get_env(session_id: str) -> CustomerSupportEnv:
     return _active_envs[session_id]
 
 # ── Routes ────────────────────────────────────────────────────────────────────
-@app.get("/", response_class=RedirectResponse)
 @app.get("/")
 async def root():
     from fastapi.responses import RedirectResponse
     return RedirectResponse(url="/demo")
-    <h1>🤖 CustomerSupportEnv v2.0.0</h1>
-    <p>3-Layer Multi-Agent Customer Support RL Environment</p>
-    <h3>Endpoints:</h3>
-    <ul>
+
+
+
+
+
       <li><a href="/docs" style="color:#818cf8;">/docs</a> — Swagger UI</li>
       <li><a href="/metrics" style="color:#818cf8;">/metrics</a> — Performance Dashboard</li>
       <li><a href="/demo" style="color:#818cf8;">/demo</a> — Interactive Gradio UI</li>
