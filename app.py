@@ -211,3 +211,4 @@ async def health():
 import gradio as gr
 from demo import demo as gradio_demo
 app = gr.mount_gradio_app(app, gradio_demo, path="/demo", root_path="/demo")
+
