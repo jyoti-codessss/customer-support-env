@@ -19,7 +19,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel
 
 # ── Logging ───────────────────────────────────────────────────────────────────
@@ -95,7 +95,8 @@ def get_env(session_id: str) -> CustomerSupportEnv:
     return _active_envs[session_id]
 
 # ── Routes ────────────────────────────────────────────────────────────────────
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=RedirectResponse)
+@app.get("/home", response_class=HTMLResponse)
 async def root():
     return """
     <html><body style="font-family:monospace;background:#0f0f1a;color:#a5b4fc;padding:40px;">
