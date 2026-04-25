@@ -19,7 +19,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel
 
 # Logging
@@ -94,13 +94,18 @@ def get_env(session_id: str) -> CustomerSupportEnv:
         raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found. Call /reset first.")
     return _active_envs[session_id]
 
+# Routes
 @app.get("/", response_class=HTMLResponse)
 async def root():
     return """<html><body style="font-family:monospace;background:#0f0f1a;color:#a5b4fc;padding:40px;">
 <h1>CustomerSupportEnv v2.0.0</h1>
 <p>3-Layer Multi-Agent Customer Support RL Environment</p>
-<p><a href="/demo" style="color:#34d399;font-size:1.2em;">Launch Interactive Demo</a></p>
-<p><a href="/docs" style="color:#818cf8;">/docs</a> | <a href="/metrics" style="color:#818cf8;">/metrics</a></p>
+<br>
+<p><a href="/demo" style="color:#34d399;font-size:1.3em;font-weight:bold;">Launch Interactive Demo</a></p>
+<br>
+<p><a href="/docs" style="color:#818cf8;">/docs</a> &nbsp;|&nbsp;
+<a href="/metrics" style="color:#818cf8;">/metrics</a> &nbsp;|&nbsp;
+<a href="/health" style="color:#818cf8;">/health</a></p>
 </body></html>"""
 
 @app.post("/reset")
@@ -112,8 +117,8 @@ async def reset(req: ResetRequest):
     obs = env.reset()
     _active_envs[session_id] = env
 
-    account_id = obs.metadata.get("account_id", "unknown")
-    memory_context = memory_store.recall_context(account_id)
+    account_id = getattr(obs, "account_id", "unknown")
+    memory_context = memory_store.recall(account_id)
 
     return {
         "session_id": session_id,
@@ -132,7 +137,8 @@ async def step(req: StepRequest):
 
     action = Action(
         action_type=action_type,
-        response_text=req.content or "",
+        content=req.content or "",
+        metadata=req.metadata or {},
     )
     obs, reward, done, info = env.step(action)
 
@@ -146,12 +152,16 @@ async def step(req: StepRequest):
 @app.post("/grade")
 async def grade(req: GradeRequest):
     env = get_env(req.session_id)
-    score, breakdown = env.grade()
+    result = env.grade()
 
-    return {
-        "score": score,
-        "breakdown": breakdown,
-    }
+    account_id = getattr(env, "account_id", "unknown")
+    memory_store.remember(account_id, {
+        "task_id": getattr(env, "task_id", "unknown"),
+        "score": result.get("score", 0),
+        "timestamp": time.time(),
+    })
+
+    return result
 
 @app.get("/metrics", response_class=HTMLResponse)
 async def metrics():
@@ -169,27 +179,19 @@ async def metrics():
     </body></html>
     """
 
-# Memory endpoints — /memory/stats MUST be before /memory/{account_id}
-@app.get("/memory/stats")
-async def memory_stats():
-    return memory_store.stats()
-
+# Memory endpoints
 @app.get("/memory/{account_id}")
 async def get_memory(account_id: str):
-    profile = memory_store.recall(account_id)
-    if profile is None:
-        raise HTTPException(status_code=404, detail=f"No memory for '{account_id}'")
-    return {
-        "account_id": account_id,
-        "context": memory_store.recall_context(account_id),
-    }
+    return {"account_id": account_id, "memory": memory_store.recall(account_id)}
 
 @app.delete("/memory/{account_id}")
 async def delete_memory(account_id: str):
-    deleted = memory_store.forget(account_id)
-    if not deleted:
-        raise HTTPException(status_code=404, detail=f"No memory for '{account_id}'")
+    memory_store.forget(account_id)
     return {"status": "deleted", "account_id": account_id}
+
+@app.get("/memory/stats")
+async def memory_stats():
+    return memory_store.stats()
 
 # Health check
 @app.get("/health")
