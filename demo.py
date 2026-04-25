@@ -313,8 +313,7 @@ _THEME = gr.themes.Base(
     font=gr.themes.GoogleFont("Inter"),
 )
 
-with gr.Blocks(title="Customer Support Agent Arena",
-               theme=_THEME, css=CUSTOM_CSS) as demo:
+with gr.Blocks(title="Customer Support Agent Arena") as demo:
     gr.HTML(HEADER_HTML)
 
     with gr.Row():
