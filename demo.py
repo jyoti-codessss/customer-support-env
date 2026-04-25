@@ -26,7 +26,7 @@ TASK_INFO = {
 }
 
 HEADER = """<div style="text-align:center;padding:20px;background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:16px;margin-bottom:16px;">
-<h1 style="color:#a5b4fc;margin:0;">&#x1F916; CustomerSupportEnv</h1>
+<h1 style="color:#a5b4fc;margin:0;"> CustomerSupportEnv</h1>
 <p style="color:#818cf8;margin:6px 0 0;">3-Layer Multi-Agent &mdash; GRPO Trained &mdash; 1.000/1.000 Score</p>
 <div style="margin-top:10px;">
 <span style="background:#4f46e5;color:#fff;padding:4px 14px;border-radius:20px;font-size:0.85em;margin:0 4px;">Supervisor Agent</span>
@@ -40,8 +40,8 @@ def on_task_select(task_id):
     diff, desc, msg = TASK_INFO.get(task_id, ("?","",""))
     colors = {"Easy":"#34d399","Medium":"#fbbf24","Hard":"#f87171","Expert":"#c084fc"}
     c = colors.get(diff,"#94a3b8")
-    info_html = f'<div style="background:#1e293b;padding:12px;border-radius:8px;"><span style="color:{c};font-weight:bold;">&#9679; {diff}</span><span style="color:#94a3b8;margin-left:8px;">{desc}</span></div>'
-    msg_html  = f'<div style="background:#1e1a2e;border-left:4px solid #f59e0b;padding:14px;border-radius:8px;"><p style="color:#fbbf24;font-size:0.8em;margin:0 0 4px;">&#128100; CUSTOMER</p><p style="color:#f1f5f9;margin:0;font-style:italic;">{msg}</p></div>'
+    info_html = f'<div style="background:#1e293b;padding:12px;border-radius:8px;"><span style="color:{c};font-weight:bold;"> {diff}</span><span style="color:#94a3b8;margin-left:8px;">{desc}</span></div>'
+    msg_html  = f'<div style="background:#1e1a2e;border-left:4px solid #f59e0b;padding:14px;border-radius:8px;"><p style="color:#fbbf24;font-size:0.8em;margin:0 0 4px;"> CUSTOMER</p><p style="color:#f1f5f9;margin:0;font-style:italic;">{msg}</p></div>'
     return info_html, msg_html
 
 def run_agent(task_id):
@@ -54,9 +54,9 @@ def run_agent(task_id):
 
     steps_html = f"""
 <div style="background:#1e293b;padding:16px;border-radius:12px;">
-  <h3 style="color:#a5b4fc;margin:0 0 12px;">&#x1F504; Agent Simulation &mdash; {task_id}</h3>
+  <h3 style="color:#a5b4fc;margin:0 0 12px;"> Agent Simulation &mdash; {task_id}</h3>
   <div style="background:#0f172a;border-left:4px solid #f59e0b;padding:12px;border-radius:8px;margin-bottom:12px;">
-    <p style="color:#fbbf24;font-size:0.8em;margin:0 0 4px;">&#128100; CUSTOMER</p>
+    <p style="color:#fbbf24;font-size:0.8em;margin:0 0 4px;"> CUSTOMER</p>
     <p style="color:#f1f5f9;margin:0;font-style:italic;">{customer_msg}</p>
   </div>"""
 
@@ -75,10 +75,10 @@ def run_agent(task_id):
     score_html = """
 <div style="text-align:center;background:#064e3b;border:2px solid #34d399;border-radius:16px;padding:24px;margin-bottom:16px;">
   <div style="font-size:3.5em;font-weight:900;color:#34d399;">1.000</div>
-  <div style="color:#6ee7b7;font-size:1.1em;margin-top:4px;">PERFECT SCORE &#10024;</div>
+  <div style="color:#6ee7b7;font-size:1.1em;margin-top:4px;">PERFECT SCORE </div>
 </div>
 <div style="background:#1e293b;border-radius:12px;padding:16px;">
-  <h4 style="color:#a5b4fc;margin:0 0 12px;">&#x1F4CA; Reward Breakdown</h4>
+  <h4 style="color:#a5b4fc;margin:0 0 12px;">📊 Reward Breakdown</h4>
   <table style="width:100%;border-collapse:collapse;color:#e2e8f0;font-size:0.95em;">
     <thead>
       <tr style="border-bottom:1px solid #334155;">
@@ -88,23 +88,23 @@ def run_agent(task_id):
     </thead>
     <tbody>
       <tr style="border-bottom:1px solid #1e293b;">
-        <td style="padding:8px;">&#x2705; JSON Format</td>
+        <td style="padding:8px;">✅ JSON Format</td>
         <td style="text-align:right;padding:8px;color:#34d399;font-weight:bold;">1.00</td>
       </tr>
       <tr style="border-bottom:1px solid #1e293b;">
-        <td style="padding:8px;">&#x1F499; Empathy</td>
+        <td style="padding:8px;">💙 Empathy</td>
         <td style="text-align:right;padding:8px;color:#34d399;font-weight:bold;">1.00</td>
       </tr>
       <tr style="border-bottom:1px solid #1e293b;">
-        <td style="padding:8px;">&#x26A1; Action Taken</td>
+        <td style="padding:8px;">⚡ Action Taken</td>
         <td style="text-align:right;padding:8px;color:#34d399;font-weight:bold;">1.00</td>
       </tr>
       <tr style="border-bottom:1px solid #1e293b;">
-        <td style="padding:8px;">&#x1F3AF; Resolution</td>
+        <td style="padding:8px;">🎯 Resolution</td>
         <td style="text-align:right;padding:8px;color:#34d399;font-weight:bold;">1.00</td>
       </tr>
       <tr style="border-top:2px solid #334155;">
-        <td style="padding:10px;font-weight:bold;color:#f1f5f9;">&#x1F3C6; Final Score</td>
+        <td style="padding:10px;font-weight:bold;color:#f1f5f9;">🏆 Final Score</td>
         <td style="text-align:right;padding:10px;color:#34d399;font-size:1.3em;font-weight:900;">1.000</td>
       </tr>
     </tbody>
