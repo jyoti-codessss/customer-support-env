@@ -1,11 +1,11 @@
 """
-app.py — FastAPI server exposing CustomerSupportEnv as an HTTP API.
+app.py - FastAPI server exposing CustomerSupportEnv as an HTTP API.
 Uses file-based session persistence for HuggingFace Spaces.
 FIXED: /reset accepts empty body (task_id optional, defaults to 'billing_dispute_easy')
 Includes:
-  - /metrics  — Real-time agent performance dashboard
-  - /memory/* — Customer memory endpoints
-  - /demo     — Gradio interactive UI (mounted at bottom)
+  - /metrics  - Real-time agent performance dashboard
+  - /memory/* - Customer memory endpoints
+  - /demo     - Gradio interactive UI (mounted at bottom)
 """
 
 import os
@@ -22,16 +22,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel
 
-# ── Logging ───────────────────────────────────────────────────────────────────
+# Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ── Local imports ─────────────────────────────────────────────────────────────
+# Local imports
 from env.environment import CustomerSupportEnv
 from env.models import Action, ActionType
 from env.memory import ConversationMemory
 
-# ── Session persistence (file-based for HF Spaces) ───────────────────────────
+# Session persistence (file-based for HF Spaces)
 SESSIONS_FILE = Path("/tmp/sessions.json")
 
 def load_sessions() -> Dict:
@@ -48,11 +48,11 @@ def save_sessions(sessions: Dict):
     except Exception as e:
         logger.error(f"Failed to save sessions: {e}")
 
-# ── In-memory env store (active sessions) ────────────────────────────────────
+# In-memory env store (active sessions)
 _active_envs: Dict[str, CustomerSupportEnv] = {}
 memory_store = ConversationMemory()
 
-# ── FastAPI app ───────────────────────────────────────────────────────────────
+# FastAPI app
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("CustomerSupportEnv API starting up...")
@@ -74,7 +74,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Pydantic models ───────────────────────────────────────────────────────────
+# Pydantic models
 class ResetRequest(BaseModel):
     task_id: Optional[str] = "billing_dispute_easy"
     session_id: Optional[str] = None
@@ -88,31 +88,16 @@ class StepRequest(BaseModel):
 class GradeRequest(BaseModel):
     session_id: str
 
-# ── Helper ────────────────────────────────────────────────────────────────────
+# Helper
 def get_env(session_id: str) -> CustomerSupportEnv:
     if session_id not in _active_envs:
         raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found. Call /reset first.")
     return _active_envs[session_id]
 
-# ── Routes ────────────────────────────────────────────────────────────────────
+# Routes
 @app.get("/")
 async def root():
-    from fastapi.responses import RedirectResponse
     return RedirectResponse(url="/demo")
-
-
-
-
-
-      <li><a href="/docs" style="color:#818cf8;">/docs</a> — Swagger UI</li>
-      <li><a href="/metrics" style="color:#818cf8;">/metrics</a> — Performance Dashboard</li>
-      <li><a href="/demo" style="color:#818cf8;">/demo</a> — Interactive Gradio UI</li>
-      <li>POST /reset — Start new episode</li>
-      <li>POST /step — Take action</li>
-      <li>POST /grade — Get final score</li>
-    </ul>
-    </body></html>
-    """
 
 @app.post("/reset")
 async def reset(req: ResetRequest):
@@ -123,7 +108,6 @@ async def reset(req: ResetRequest):
     obs = env.reset()
     _active_envs[session_id] = env
 
-    # Load memory for this customer
     account_id = getattr(obs, "account_id", "unknown")
     memory_context = memory_store.recall(account_id)
 
@@ -161,7 +145,6 @@ async def grade(req: GradeRequest):
     env = get_env(req.session_id)
     result = env.grade()
 
-    # Save to memory
     account_id = getattr(env, "account_id", "unknown")
     memory_store.remember(account_id, {
         "task_id": getattr(env, "task_id", "unknown"),
@@ -177,7 +160,7 @@ async def metrics():
     count = len(_active_envs)
     return f"""
     <html><body style="font-family:monospace;background:#0f0f1a;color:#a5b4fc;padding:40px;">
-    <h1>📊 Real-Time Metrics</h1>
+    <h1>Real-Time Metrics</h1>
     <p>Active sessions: <strong style="color:#34d399;">{count}</strong></p>
     <p>Total sessions: <strong style="color:#818cf8;">{len(sessions)}</strong></p>
     <p>Model: Llama-3.1-8B + GRPO (60 steps)</p>
@@ -187,7 +170,7 @@ async def metrics():
     </body></html>
     """
 
-# ── Memory endpoints ──────────────────────────────────────────────────────────
+# Memory endpoints
 @app.get("/memory/{account_id}")
 async def get_memory(account_id: str):
     return {"account_id": account_id, "memory": memory_store.recall(account_id)}
@@ -201,14 +184,12 @@ async def delete_memory(account_id: str):
 async def memory_stats():
     return memory_store.stats()
 
-# ── Health check ──────────────────────────────────────────────────────────────
+# Health check
 @app.get("/health")
 async def health():
     return {"status": "ok", "version": "2.0.0", "active_sessions": len(_active_envs)}
 
-# ── Mount Gradio Demo ─────────────────────────────────────────────────────────
-# NOTE: Import AFTER app is defined to avoid circular issues
+# Mount Gradio Demo
 import gradio as gr
 from demo import demo as gradio_demo
-app = gr.mount_gradio_app(app, gradio_demo, path="/demo", root_path="/demo")
-
+app = gr.mount_gradio_app(app, gradio_demo, path="/demo")
