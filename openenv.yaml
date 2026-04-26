@@ -1,5 +1,5 @@
 name: customer-support-agent
-version: "2.0.0"          # upgrade karo
+version: "2.0.0"
 description: >
   A multi-turn, multi-agent customer support simulation environment where a 
   3-layer AI agent system resolves user complaints through typed actions — 
@@ -9,17 +9,14 @@ tags:
   - openenv
   - customer-support
   - multi-turn
-  - multi-agent        # add karo
+  - multi-agent
   - reasoning
   - escalation
-  - grpo               # add karo
-  - world-modeling     # add karo
-  - long-horizon       # add karo
+  - grpo
+  - world-modeling
+  - long-horizon
 author: OpenEnv Hackathon Submission — Jyoti Yadav
 license: MIT
-
-# ... baaki same ...
-
 tasks:
   - id: billing_dispute_easy
     difficulty: easy
@@ -30,9 +27,9 @@ tasks:
   - id: fraud_complaint_hard
     difficulty: hard
     description: Handle a complex fraud + account compromise with multi-step verification
-  - id: returns_exchange_medium    # add karo agar Space mein hai
-    difficulty: medium
-    description: Process product return and exchange requests
-  - id: account_security_expert    # add karo agar Space mein hai
+  - id: subscription_cancellation_hard
+    difficulty: hard
+    description: Long-term customer retention challenge with negotiation
+  - id: vip_account_recovery_expert
     difficulty: expert
-    description: Handle account security breach with multi-step verification
+    description: Handle VIP account security breach with multi-method verification
