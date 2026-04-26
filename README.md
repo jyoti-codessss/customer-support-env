@@ -455,7 +455,7 @@ customer-support-env/
 - **HuggingFace Space:** https://huggingface.co/spaces/Jyoti-6/customer-support-env
 - **Live Demo:** https://jyoti-6-customer-support-env.hf.space/demo
 - **Trained Model:** https://huggingface.co/Jyoti-6/customer-support-grpo-qwen
-
+- **Training Notebook (Colab):** https://colab.research.google.com/drive/1Jt0O9v-0FVoRAiGAvIokV5Qgy3u9RESD?usp=sharing
 ---
 
 
