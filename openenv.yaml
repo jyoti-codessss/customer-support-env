@@ -1,4 +1,4 @@
-name: customer-support-agent
+﻿name: customer-support-agent
 version: "2.0.0"
 description: >
   A multi-turn, multi-agent customer support simulation environment where a 
