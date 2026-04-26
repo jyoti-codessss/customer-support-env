@@ -1,5 +1,11 @@
 """
 app.py - FastAPI server exposing CustomerSupportEnv as an HTTP API.
+Uses file-based session persistence for HuggingFace Spaces.
+FIXED: /reset accepts empty body (task_id optional, defaults to 'billing_dispute_easy')
+Includes:
+  - /metrics  - Real-time agent performance dashboard
+  - /memory/* - Customer memory endpoints
+  - /demo     - Gradio interactive UI (mounted at bottom)
 """
 
 import os
@@ -13,16 +19,19 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel
 
+# Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Local imports
 from env.environment import CustomerSupportEnv
 from env.models import Action, ActionType
 from env.memory import ConversationMemory
 
+# Session persistence (file-based for HF Spaces)
 SESSIONS_FILE = Path("/tmp/sessions.json")
 
 def load_sessions() -> Dict:
@@ -39,9 +48,11 @@ def save_sessions(sessions: Dict):
     except Exception as e:
         logger.error(f"Failed to save sessions: {e}")
 
+# In-memory env store (active sessions)
 _active_envs: Dict[str, CustomerSupportEnv] = {}
 memory_store = ConversationMemory()
 
+# FastAPI app
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("CustomerSupportEnv API starting up...")
@@ -63,6 +74,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Pydantic models
 class ResetRequest(BaseModel):
     task_id: Optional[str] = "billing_dispute_easy"
     session_id: Optional[str] = None
@@ -76,11 +88,13 @@ class StepRequest(BaseModel):
 class GradeRequest(BaseModel):
     session_id: str
 
+# Helper
 def get_env(session_id: str) -> CustomerSupportEnv:
     if session_id not in _active_envs:
         raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found. Call /reset first.")
     return _active_envs[session_id]
 
+# Routes
 @app.get("/", response_class=HTMLResponse)
 async def root():
     return """<html><body style="font-family:monospace;background:#0f0f1a;color:#a5b4fc;padding:40px;">
@@ -89,22 +103,23 @@ async def root():
 <br>
 <p><a href="/demo" style="color:#34d399;font-size:1.3em;font-weight:bold;">Launch Interactive Demo</a></p>
 <br>
-<p>
-<a href="/docs" style="color:#818cf8;">/docs</a> &nbsp;|&nbsp;
+<p><a href="/docs" style="color:#818cf8;">/docs</a> &nbsp;|&nbsp;
 <a href="/metrics" style="color:#818cf8;">/metrics</a> &nbsp;|&nbsp;
-<a href="/health" style="color:#818cf8;">/health</a>
-</p>
+<a href="/health" style="color:#818cf8;">/health</a></p>
 </body></html>"""
 
 @app.post("/reset")
 async def reset(req: ResetRequest):
     session_id = req.session_id or str(uuid.uuid4())
     task_id = req.task_id or "billing_dispute_easy"
+
     env = CustomerSupportEnv(task_id=task_id)
     obs = env.reset()
     _active_envs[session_id] = env
+
     account_id = getattr(obs, "account_id", "unknown")
     memory_context = memory_store.recall(account_id)
+
     return {
         "session_id": session_id,
         "task_id": task_id,
@@ -119,12 +134,14 @@ async def step(req: StepRequest):
         action_type = ActionType[req.action_type.upper()]
     except KeyError:
         raise HTTPException(status_code=400, detail=f"Invalid action_type: {req.action_type}")
+
     action = Action(
         action_type=action_type,
         content=req.content or "",
         metadata=req.metadata or {},
     )
     obs, reward, done, info = env.step(action)
+
     return {
         "observation": obs.dict() if hasattr(obs, "dict") else str(obs),
         "reward": reward,
@@ -136,28 +153,33 @@ async def step(req: StepRequest):
 async def grade(req: GradeRequest):
     env = get_env(req.session_id)
     result = env.grade()
+
     account_id = getattr(env, "account_id", "unknown")
     memory_store.remember(account_id, {
         "task_id": getattr(env, "task_id", "unknown"),
         "score": result.get("score", 0),
         "timestamp": time.time(),
     })
+
     return result
 
 @app.get("/metrics", response_class=HTMLResponse)
 async def metrics():
     sessions = load_sessions()
     count = len(_active_envs)
-    return f"""<html><body style="font-family:monospace;background:#0f0f1a;color:#a5b4fc;padding:40px;">
-<h1>Real-Time Metrics</h1>
-<p>Active sessions: <strong style="color:#34d399;">{count}</strong></p>
-<p>Total sessions: <strong style="color:#818cf8;">{len(sessions)}</strong></p>
-<p>Model: Llama-3.1-8B + GRPO (60 steps)</p>
-<p>Best score: <strong style="color:#34d399;">1.000 / 1.000</strong></p>
-<p>Baseline score: <strong style="color:#f87171;">0.268</strong></p>
-<p>Improvement: <strong style="color:#34d399;">+273%</strong></p>
-</body></html>"""
+    return f"""
+    <html><body style="font-family:monospace;background:#0f0f1a;color:#a5b4fc;padding:40px;">
+    <h1>Real-Time Metrics</h1>
+    <p>Active sessions: <strong style="color:#34d399;">{count}</strong></p>
+    <p>Total sessions: <strong style="color:#818cf8;">{len(sessions)}</strong></p>
+    <p>Model: Llama-3.1-8B + GRPO (60 steps)</p>
+    <p>Best score: <strong style="color:#34d399;">1.000 / 1.000</strong></p>
+    <p>Baseline score: <strong style="color:#f87171;">0.268</strong></p>
+    <p>Improvement: <strong style="color:#34d399;">+273%</strong></p>
+    </body></html>
+    """
 
+# Memory endpoints
 @app.get("/memory/{account_id}")
 async def get_memory(account_id: str):
     return {"account_id": account_id, "memory": memory_store.recall(account_id)}
@@ -171,11 +193,12 @@ async def delete_memory(account_id: str):
 async def memory_stats():
     return memory_store.stats()
 
+# Health check
 @app.get("/health")
 async def health():
     return {"status": "ok", "version": "2.0.0", "active_sessions": len(_active_envs)}
 
-# Mount Gradio - must be last
+# Mount Gradio Demo
 import gradio as gr
 from demo import demo as gradio_demo
 app = gr.mount_gradio_app(app, gradio_demo, path="/demo")
