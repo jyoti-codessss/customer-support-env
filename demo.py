@@ -45,11 +45,11 @@ MODEL_NAME   = os.getenv("MODEL_NAME",   "meta-llama/Llama-3.1-8B-Instruct")
 HF_TOKEN     = os.getenv("HF_TOKEN", "")
 
 TASK_META = {
-    "billing_dispute_easy":            ("Easy",   "#34d399", "Billing Dispute",        "Sarah Johnson",  "Premium",    "ACC-10021"),
-    "technical_outage_medium":         ("Medium", "#fbbf24", "Technical Outage",        "Mike Chen",      "Business",   "ACC-20045"),
-    "fraud_complaint_hard":            ("Hard",   "#f87171", "Fraud Complaint",         "Priya Sharma",   "Enterprise", "ACC-30087"),
-    "subscription_cancellation_hard":  ("Hard",   "#f87171", "Subscription Cancellation","David Kim",     "Standard",   "ACC-40032"),
-    "vip_account_recovery_expert":     ("Expert", "#c084fc", "VIP Account Recovery",   "Emma Wilson",    "VIP Enterprise","ACC-50001"),
+    "billing_dispute_easy":            ("Easy",   "#34d399", "Billing Dispute",         "Sarah Johnson",  "Premium",       "ACC-10021"),
+    "technical_outage_medium":         ("Medium", "#fbbf24", "Technical Outage",         "Mike Chen",      "Business",      "ACC-20045"),
+    "fraud_complaint_hard":            ("Hard",   "#f87171", "Fraud Complaint",          "Priya Sharma",   "Enterprise",    "ACC-30087"),
+    "subscription_cancellation_hard":  ("Hard",   "#f87171", "Subscription Cancellation","David Kim",      "Standard",      "ACC-40032"),
+    "vip_account_recovery_expert":     ("Expert", "#c084fc", "VIP Account Recovery",    "Emma Wilson",    "VIP Enterprise","ACC-50001"),
 }
 
 # ── HTML Components ────────────────────────────────────────────────────────────
@@ -85,7 +85,6 @@ SCORE_BANNER = '''<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap
 # ── Real Inference Functions ───────────────────────────────────────────────────
 
 def _extract_json(text: str):
-    import json
     text = text.strip()
     try:
         return json.loads(text)
@@ -137,6 +136,15 @@ TASK_GUIDES = {
 }
 
 
+def _get_category(task_def: dict) -> str:
+    """✅ FIX: Extract issue_category correctly from nested metadata object."""
+    meta = task_def.get("metadata")
+    if meta and hasattr(meta, "issue_category"):
+        return meta.issue_category
+    # fallback: direct key (shouldn't happen but safe)
+    return task_def.get("issue_category", "")
+
+
 def run_real_inference(task_id: str, log_queue: queue.Queue):
     """Run actual LLM inference and push steps to queue."""
     try:
@@ -148,7 +156,9 @@ def run_real_inference(task_id: str, log_queue: queue.Queue):
         env = CustomerSupportEnv(task_id)
         task_def = TASKS[task_id]
         task_context = task_def["system_context"]
-        category = task_def.get("issue_category", "")
+
+        # ✅ FIX: use helper to get category from metadata
+        category = _get_category(task_def)
 
         obs = env.reset()
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
@@ -297,7 +307,7 @@ def on_task_select(task_id):
     )
 
     task_def = TASKS.get(task_id, {}) if REAL_MODE else {}
-    customer_msg = task_def.get("initial_message", "Customer message loading...")
+    customer_msg = task_def.get("initial_user_message", "Customer message loading...")
     customer_html = (
         f'<div style="background:#1e1a2e;border-left:4px solid #f59e0b;padding:14px;border-radius:8px;">'
         f'<p style="color:#fbbf24;font-size:0.8em;margin:0 0 4px;">CUSTOMER — {name} | {plan} | {account_id}</p>'
@@ -365,7 +375,6 @@ def run_agent(task_id):
     all_steps = []
     error = None
 
-    # Wait for completion (max 120 seconds)
     timeout = 120
     start = time.time()
 
@@ -428,7 +437,6 @@ def run_agent(task_id):
 
             steps_html += '</div>'
 
-            # Score panel
             rs = "display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid #334155;"
             score_html = (
                 f'<div style="text-align:center;background:#064e3b;border:2px solid {score_color};border-radius:16px;padding:20px;margin-bottom:12px;">'
@@ -452,7 +460,6 @@ def run_agent(task_id):
                 f'</div></div></div>'
             )
 
-            # Chart
             rewards = [s["reward"] for s in all_steps]
             cumulative = []
             total = 0
@@ -488,7 +495,7 @@ def run_agent(task_id):
     return steps_html, score_html, chart_html
 
 
-# ── Architecture & API HTML (same as before) ───────────────────────────────────
+# ── Architecture & API HTML ────────────────────────────────────────────────────
 
 ARCHITECTURE_HTML = """<div style="background:#0f172a;border-radius:16px;padding:24px;font-family:sans-serif;">
   <h2 style="color:#a5b4fc;text-align:center;margin:0 0 4px;">System Architecture</h2>
