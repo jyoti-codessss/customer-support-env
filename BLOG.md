@@ -1,236 +1,199 @@
 # Building CustomerSupportEnv: A 3-Layer Multi-Agent System with GRPO Training
 
-**OpenEnv Hackathon Submission — Abhaykumar jha /Jyoti Yadav**
+**OpenEnv Hackathon Submission — Jyoti Yadav**
 
 ---
 
-## The Problem
+*"It started with a frustrating customer support call."*
 
-Customer support is one of the hardest real-world tasks for AI agents. It requires:
+I was on hold for 45 minutes. The agent forgot everything I said in the previous call. I had to repeat my entire problem from scratch. And at the end — wrong refund amount.
 
-- **Multi-turn reasoning** across 6–15 conversation turns
-- **Long-horizon planning** — knowing what to do 3 steps ahead
-- **Policy compliance** — never issue a refund without verifying identity
-- **World modeling** — remembering frustrated customers from previous sessions
-- **Self-improvement** — learning from mistakes in real-time
+That moment made me think — **can AI actually do this better?**
 
-Most LLM demos handle single-turn Q&A. CustomerSupportEnv goes much deeper.
+Not just answer one question. But actually *remember* me. *Follow* company rules. *Escalate* when needed. And *improve* when it makes mistakes.
+
+That's why I built **CustomerSupportEnv.**
 
 ---
 
-## What I Built
+## The Real Challenge Nobody Talks About
 
-**CustomerSupportEnv** is an OpenEnv-compliant simulation environment where a 3-layer AI agent system resolves customer complaints through typed actions — responding, escalating, issuing refunds, and closing tickets.
+Everyone builds chatbots that answer one question perfectly. But real customer support is messy:
 
-### 5 Tasks — Easy to Expert
+- The customer is angry from a previous bad experience
+- The agent must verify identity *before* issuing a refund
+- Sometimes the problem needs an engineer — not just an apology
+- A VIP customer needs different treatment than a new user
+
+Single-turn Q&A can't handle this. You need memory, planning, and judgment.
+
+**So I built a 3-layer system that thinks like a team — not just one bot.**
+
+---
+
+## The 5 Tasks — From Simple to Brutal
 
 | Task | Difficulty | Max Turns | Challenge |
 |------|-----------|-----------|-----------|
-| `billing_dispute_easy` | Easy | 6 | Correct refund + plan confirmation |
-| `technical_outage_medium` | Medium | 8 | Diagnostics + escalation to Engineering |
-| `fraud_complaint_hard` | Hard | 10 | Identity verify → refund → Fraud & Security |
-| `subscription_cancellation_hard` | Hard | 12 | Retention negotiation with 2-year customer |
-| `vip_account_recovery_expert` | Expert | 15 | Multi-method verify → audit → VIP escalation |
-
-### Final Score: **1.000 / 1.000** on all 5 tasks ✅
+| billing_dispute_easy | Easy | 6 | Correct refund + plan confirmation |
+| technical_outage_medium | Medium | 8 | Diagnostics + escalation to Engineering |
+| fraud_complaint_hard | Hard | 10 | Identity verify → refund → Fraud & Security |
+| subscription_cancellation_hard | Hard | 12 | Retention negotiation with 2-year customer |
+| vip_account_recovery_expert | Expert | 15 | Multi-method verify → audit → VIP escalation |
 
 ---
 
-## The Architecture
+## Layer 1 — The Frontline Agent
 
-```
-┌──────────────────────────────────────────┐
-│           CUSTOMER INPUT                 │
-│  5 task types across 3 difficulty levels │
-└──────────────────┬───────────────────────┘
-                   ↓
-┌──────────────────────────────────────────┐
-│         WORLD MODEL (Memory)             │
-│  Customer history • Sentiment tracking   │
-│  Repeat issue detection • VIP status     │
-└──────────────────┬───────────────────────┘
-                   ↓
-┌──────────────────────────────────────────┐
-│    LAYER 1 — CUSTOMER AGENT              │
-│  LLM-powered response generation         │
-│  meta-llama/Llama-3.1-8B-Instruct        │
-│  Confidence scoring (0.0 → 1.0)          │
-└──────────────────┬───────────────────────┘
-                   ↓
-┌──────────────────────────────────────────┐
-│    LAYER 2 — SUPERVISOR AGENT            │
-│  Policy compliance checks                │
-│  Fraud safety (identity before refund)   │
-│  Empathy verification                    │
-└──────────────────┬───────────────────────┘
-                   ↓
-┌──────────────────────────────────────────┐
-│    LAYER 3 — ORCHESTRATOR AGENT          │
-│  Self-improvement loop                   │
-│  Failure analysis → targeted fixes       │
-│  Up to 3 retries per task                │
-└──────────────────┬───────────────────────┘
-                   ↓
-┌──────────────────────────────────────────┐
-│         GRPO REWARD SIGNAL               │
-│  JSON format • Empathy • Action • Result │
-└──────────────────────────────────────────┘
-```
+*"Think of this as the junior support rep."*
+
+It reads the customer's message, checks their history, and decides what to do. Every response comes with a confidence score:
+
+| Confidence | What happens |
+|-----------|-------------|
+| >= 0.6 | Accepted directly |
+| 0.4 - 0.6 | Supervisor reviews |
+| < 0.4 | Orchestrator takes over |
 
 ---
 
-## System 1: Hierarchical Multi-Agent Architecture
+## Layer 2 — The Supervisor
 
-Three agents collaborate on every interaction:
+*"Every company has that one experienced manager who catches mistakes."*
 
-**Layer 1 — CustomerAgent**
-The frontline LLM. Receives customer message + memory context + turn hint, generates a JSON action with confidence score and reasoning.
+Before any response goes out — the Supervisor checks it:
 
-```json
-{
-  "action_type": "refund",
-  "response_text": "I sincerely apologize for the incorrect charge...",
-  "refund_amount": 20.00,
-  "confidence": 0.92,
-  "reasoning": "Customer on Basic plan charged Pro rate, $20 difference"
-}
-```
+- Did the agent try to issue a refund without verifying identity? **Blocked.**
+- Did the agent close the ticket without escalating a technical issue? **Rejected.**
+- No empathy in the first response? **Flagged for correction.**
 
-**Layer 2 — SupervisorAgent**
-Rule-based policy enforcer. Checks every response before execution:
-- Is identity verified before a fraud refund? If not — **BLOCK**
-- Is the agent closing without escalating a technical issue? **REJECT**
-- Is there empathy in the first response? **FLAG** for correction
-
-**Layer 3 — OrchestratorAgent**
-Strategic self-improvement. After a failed attempt, it:
-1. Analyzes exactly which grading criteria failed
-2. Generates targeted improvement instructions
-3. Injects them into the next attempt's system prompt
-4. Retries up to 3 times, tracking score progression
+This is not just prompting. This is real policy enforcement.
 
 ---
 
-## System 2: Confidence-Based Routing
+## Layer 3 — The Orchestrator
 
-| Confidence | Routing |
-|-----------|---------|
-| `≥ 0.6` | Accept directly |
-| `0.4 – 0.6` | SupervisorAgent reviews |
-| `< 0.4` | OrchestratorAgent takes over |
+*"This is the part I'm most proud of."*
 
-Critical actions (refunds, escalations, closures) are **always** reviewed regardless of confidence.
+When the agent fails — the Orchestrator doesn't just retry. It asks: *"What exactly went wrong?"* Then it fixes that specific thing and tries again.
 
----
+It's like a coach giving targeted feedback — not just saying "try harder."
 
-## System 3: World Modeling (Conversation Memory)
-
-Before every interaction, the agent loads the customer's history:
+For the fraud task, the correct sequence is:
 
 ```
-CUSTOMER MEMORY — Sarah Mitchell (ACC-88421):
-  Total contacts: 3
-  Avg sentiment: frustrated
-  [2d ago] billing: refund $20.00 → resolved (score: 0.92)
-  [5d ago] technical: escalated to Engineering (score: 0.88)
-  → RETURNING CUSTOMER — use personalized greeting
-  → REPEAT ISSUE — consider faster escalation
-```
-
-Memory uses a **sliding window of 10 interactions** per customer, stored as JSON in `/tmp` for HuggingFace Spaces compatibility.
-
----
-
-## System 4: GRPO Training
-
-Fine-tuned **Qwen2.5-1.5B-Instruct** using GRPO + LoRA on CustomerSupportEnv.
-
-**Training Setup:**
-- Base model: `Qwen/Qwen2.5-1.5B-Instruct`
-- Method: GRPO + LoRA (r=16, alpha=32)
-- Epochs: 20
-- Group size: 4 rollouts per prompt
-- Tasks: All 5
-- Hardware: T4 GPU (Google Colab)
-
-**How GRPO works:**
-1. Generate 4 different responses for the same customer prompt
-2. Run each through CustomerSupportEnv to get rewards
-3. Compute advantages (which responses scored above average)
-4. Update model to make high-reward responses more likely
-
-**Trained model:** [Jyoti-6/customer-support-grpo-qwen](https://huggingface.co/Jyoti-6/customer-support-grpo-qwen)
-
----
-
-## System 5: Long-Horizon Planning
-
-The fraud task requires this exact sequence:
-
-```
-Turn 1: RESPOND  — verify identity (DOB + last 4 of card)
-Turn 2: RESPOND  — confirm verified, lock/freeze account
-Turn 3: REFUND   — issue full $448 refund
+Turn 1: RESPOND — verify identity (DOB + last 4 of card)
+Turn 2: RESPOND — confirm verified, lock/freeze account
+Turn 3: REFUND — issue full $448 refund
 Turn 4: ESCALATE — hand off to Fraud & Security team
 ```
 
-Skipping identity verification triggers a SupervisorAgent block — mirroring real-world compliance.
+Skip step 1 and jump to refund? Supervisor blocks it immediately.
 
 ---
 
-## Reward Function
+## The Memory System
+
+*"This changed everything."*
+
+When Sarah calls back after a frustrating experience last week — the agent already knows her history, her sentiment, her previous issues. It greets her by name. It escalates faster. It shows extra empathy.
+
+Without memory — every call starts cold.
+With memory — it feels human.
+
+---
+
+## GRPO Training
+
+I fine-tuned **Qwen2.5-1.5B-Instruct** using GRPO (Group Relative Policy Optimization) with LoRA directly on CustomerSupportEnv.
+
+**Training Setup:**
+- Base model: Qwen/Qwen2.5-1.5B-Instruct
+- Method: GRPO + LoRA (r=16, alpha=32)
+- Epochs: 20
+- Tasks: All 5
+- Group size: 4 rollouts per prompt
+- Hardware: T4 GPU (Google Colab)
+
+**How it works:**
+1. Generate 4 different responses for the same customer prompt
+2. Run each through the environment to get real rewards
+3. Figure out which responses scored above average
+4. Update the model to make high-reward responses more likely
+
+**Training Results:**
+
+| Run | Epochs | Tasks | Best Reward |
+|-----|--------|-------|-------------|
+| Run 1 | 10 | 3 tasks | 0.0333 |
+| Run 2 | 20 | 5 tasks | **0.0680** |
+
+Improvement: **+0.0347** over first run!
+
+**Reward signal:**
 
 | Event | Reward |
 |-------|--------|
-| Helpful, substantive response | +0.05 |
-| Empathy keywords detected | +0.03 |
+| Helpful response | +0.05 |
+| Empathy detected | +0.03 |
 | Correct escalation | +0.20 |
-| Escalation when not needed | -0.10 |
-| Correct refund amount | +0.20 |
-| Refund without identity verification | -0.15 |
-| Correct episode closure | +0.25 |
+| Correct refund | +0.20 |
+| Refund without verification | -0.15 |
+| Correct closure | +0.25 |
 | Premature close | -0.20 |
-| Repeated/loop response | -0.08 |
-| Exceeding max turns | -0.10 |
 
 ---
 
-## Results
+## The Results
+
+Honestly? I didn't expect perfect scores.
+
+But the system scored **1.000 on all 5 tasks** — from a simple billing dispute to a VIP account security breach.
 
 | Task | Score | Turns Used |
 |------|-------|-----------|
-| billing_dispute_easy | **1.000** | 3 |
-| technical_outage_medium | **1.000** | 4 |
-| fraud_complaint_hard | **1.000** | 4 |
-| subscription_cancellation_hard | **1.000** | 4 |
-| vip_account_recovery_expert | **1.000** | 4 |
-| **Average** | **1.000** | — |
+| billing_dispute_easy | 1.000 | 3 |
+| technical_outage_medium | 1.000 | 4 |
+| fraud_complaint_hard | 1.000 | 4 |
+| subscription_cancellation_hard | 1.000 | 4 |
+| vip_account_recovery_expert | 1.000 | 4 |
+| **Average** | **1.000** | -- |
 
 ---
 
 ## What I Learned
 
-1. **Typed action spaces matter.** Structured JSON output dramatically improves reliability.
-2. **Supervision beats prompting alone.** SupervisorAgent catches violations well-prompted LLMs miss.
-3. **Memory changes everything.** Without it, every interaction starts cold.
-4. **Turn hints are powerful.** Telling the LLM what action is expected dramatically improves coherence.
-5. **GRPO on small models works.** Even Qwen2.5-1.5B learns with a well-designed reward signal.
+The biggest lesson? **Supervision beats prompting.**
+
+You can write the perfect prompt — but a rule-based supervisor will always catch what the LLM misses. Especially safety-critical things like "never refund without verifying identity."
+
+1. **Typed action spaces matter** — structured JSON is far more reliable than free-form text
+2. **Memory changes everything** — returning customers need personalized handling
+3. **Turn hints are powerful** — telling the LLM what action is expected dramatically improves coherence
+4. **GRPO on small models works** — even Qwen2.5-1.5B learns when the reward signal is well-designed
+
+---
+
+## Demo Video
+
+Watch the 2-minute walkthrough:
+👉 [Watch Demo](YOUR_LOOM_LINK_HERE)
+
+---
+
+*"If you want to try it yourself — the live demo is one click away."*
+
+👉 [Try it live](https://huggingface.co/spaces/Jyoti-6/customer-support-env)
 
 ---
 
 ## Links
 
-- 🤗 **Live Demo:** https://huggingface.co/spaces/Jyoti-6/customer-support-env
-- 💻 **GitHub:** https://github.com/jyoti-codessss/customer-support-env
-- 🤖 **Trained Model:** https://huggingface.co/Jyoti-6/customer-support-grpo-qwen
-- 📓 **Training Notebook:** https://colab.research.google.com/drive/1Jt0O9v-0FVoRAiGAvIokV5Qgy3u9RESD
+- 🤗 HuggingFace Space: https://huggingface.co/spaces/Jyoti-6/customer-support-env
+- 💻 GitHub: https://github.com/jyoti-codessss/customer-support-env
+- 🤖 Trained Model: https://huggingface.co/Jyoti-6/customer-support-grpo-qwen
+- 📓 Training Notebook: https://colab.research.google.com/drive/1Jt0O9v-0FVoRAiGAvIokV5Qgy3u9RESD
 
 ---
-
-## 📹 Demo Video
-
-👉 [Watch 2-min Demo on Loom](https://loom.com/share/YOUR_LINK)
-
-> Complete walkthrough of the 3-layer agent system in action.
 
 *Built for the OpenEnv Hackathon. All feedback welcome!*
