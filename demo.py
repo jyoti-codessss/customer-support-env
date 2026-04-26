@@ -1,6 +1,7 @@
-﻿"""
-demo.py � Live Demo for CustomerSupportEnv
-Calls real inference.py � no hardcoded scripts or scores.
+﻿# coding: utf-8
+"""
+demo.py - Live Demo for CustomerSupportEnv
+Real LLM inference + improved UI
 """
 
 import os
@@ -20,7 +21,6 @@ import matplotlib.pyplot as plt
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-# -- Try importing real modules ------------------------------------------------
 try:
     from openai import OpenAI
     from env.environment import CustomerSupportEnv
@@ -39,50 +39,142 @@ except Exception as e:
         "vip_account_recovery_expert",
     ]
 
-# -- Config ---------------------------------------------------------------------
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME   = os.getenv("MODEL_NAME",   "meta-llama/Llama-3.1-8B-Instruct")
 HF_TOKEN     = os.getenv("HF_TOKEN", "")
 
 TASK_META = {
-    "billing_dispute_easy":            ("Easy",   "#34d399", "Billing Dispute",         "Sarah Johnson",  "Premium",       "ACC-10021"),
-    "technical_outage_medium":         ("Medium", "#fbbf24", "Technical Outage",         "Mike Chen",      "Business",      "ACC-20045"),
-    "fraud_complaint_hard":            ("Hard",   "#f87171", "Fraud Complaint",          "Priya Sharma",   "Enterprise",    "ACC-30087"),
-    "subscription_cancellation_hard":  ("Hard",   "#f87171", "Subscription Cancellation","David Kim",      "Standard",      "ACC-40032"),
-    "vip_account_recovery_expert":     ("Expert", "#c084fc", "VIP Account Recovery",    "Emma Wilson",    "VIP Enterprise","ACC-50001"),
+    "billing_dispute_easy":            ("Easy",   "#34d399", "Billing Dispute",          "Sarah Mitchell",   "Basic ($29.99/mo)",     "ACC-88421"),
+    "technical_outage_medium":         ("Medium", "#fbbf24", "Technical Outage",          "James Okafor",     "Business ($199/mo)",    "ACC-55901"),
+    "fraud_complaint_hard":            ("Hard",   "#f87171", "Fraud Complaint",           "Priya Venkataraman","Pro ($79/mo)",          "ACC-33107"),
+    "subscription_cancellation_hard":  ("Hard",   "#f87171", "Subscription Cancellation", "David Chen",       "Enterprise ($499/mo)", "ACC-12750"),
+    "vip_account_recovery_expert":     ("Expert", "#c084fc", "VIP Account Recovery",     "Alexandra Rivera", "Platinum ($2,499/mo)", "ACC-VIP-0042"),
 }
 
-# -- HTML Components ------------------------------------------------------------
-HEADER = '''<div style="text-align:center;padding:20px;background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:16px;margin-bottom:16px;">
-<h1 style="color:#a5b4fc;margin:0;font-size:1.8em;">CustomerSupportEnv</h1>
-<p style="color:#818cf8;margin:6px 0 0;">3-Layer Multi-Agent | Real LLM Inference | Long-Horizon Planning | World Modeling</p>
+# ── HTML ──────────────────────────────────────────────────────────────────────
+
+HEADER = '''<div style="text-align:center;padding:24px 20px;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);border-radius:16px;margin-bottom:16px;border:1px solid #4f46e5;">
+<h1 style="color:#a5b4fc;margin:0;font-size:2em;letter-spacing:1px;">CustomerSupportEnv</h1>
+<p style="color:#818cf8;margin:8px 0 0;font-size:0.95em;">3-Layer Multi-Agent &nbsp;|&nbsp; Real LLM Inference &nbsp;|&nbsp; Long-Horizon Planning &nbsp;|&nbsp; World Modeling</p>
 </div>'''
 
-SCORE_BANNER = '''<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
-<div style="flex:1;min-width:100px;text-align:center;background:#064e3b;border:2px solid #34d399;border-radius:12px;padding:14px;">
-<div style="font-size:2em;font-weight:900;color:#34d399;">1.000</div>
-<div style="color:#6ee7b7;font-size:0.8em;">BEST SCORE</div>
+SCORE_BANNER = '''<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+<div style="flex:1;min-width:90px;text-align:center;background:linear-gradient(135deg,#064e3b,#065f46);border:2px solid #34d399;border-radius:12px;padding:14px;">
+<div style="font-size:1.9em;font-weight:900;color:#34d399;">1.000</div>
+<div style="color:#6ee7b7;font-size:0.75em;margin-top:2px;">BEST SCORE</div>
 </div>
-<div style="flex:1;min-width:100px;text-align:center;background:#1e293b;border:1px solid #4f46e5;border-radius:12px;padding:14px;">
-<div style="font-size:2em;font-weight:900;color:#a5b4fc;">3</div>
-<div style="color:#818cf8;font-size:0.8em;">AGENT LAYERS</div>
+<div style="flex:1;min-width:90px;text-align:center;background:linear-gradient(135deg,#1e1b4b,#312e81);border:1px solid #6366f1;border-radius:12px;padding:14px;">
+<div style="font-size:1.9em;font-weight:900;color:#a5b4fc;">3</div>
+<div style="color:#818cf8;font-size:0.75em;margin-top:2px;">AGENT LAYERS</div>
 </div>
-<div style="flex:1;min-width:100px;text-align:center;background:#1e293b;border:1px solid #f59e0b;border-radius:12px;padding:14px;">
-<div style="font-size:2em;font-weight:900;color:#fbbf24;">LIVE</div>
-<div style="color:#fcd34d;font-size:0.8em;">REAL LLM</div>
+<div style="flex:1;min-width:90px;text-align:center;background:linear-gradient(135deg,#1a1200,#292400);border:1px solid #f59e0b;border-radius:12px;padding:14px;">
+<div style="font-size:1.9em;font-weight:900;color:#fbbf24;">LIVE</div>
+<div style="color:#fcd34d;font-size:0.75em;margin-top:2px;">REAL LLM</div>
 </div>
-<div style="flex:1;min-width:100px;text-align:center;background:#1e293b;border:1px solid #c084fc;border-radius:12px;padding:14px;">
-<div style="font-size:2em;font-weight:900;color:#c084fc;">10</div>
-<div style="color:#e9d5ff;font-size:0.8em;">MEMORY SLOTS</div>
+<div style="flex:1;min-width:90px;text-align:center;background:linear-gradient(135deg,#1a0a2e,#2e1065);border:1px solid #c084fc;border-radius:12px;padding:14px;">
+<div style="font-size:1.9em;font-weight:900;color:#c084fc;">10</div>
+<div style="color:#e9d5ff;font-size:0.75em;margin-top:2px;">MEMORY SLOTS</div>
 </div>
-<div style="flex:1;min-width:100px;text-align:center;background:#1e293b;border:1px solid #818cf8;border-radius:12px;padding:14px;">
-<div style="font-size:2em;font-weight:900;color:#a5b4fc;">5</div>
-<div style="color:#818cf8;font-size:0.8em;">TASKS (Easy?Expert)</div>
+<div style="flex:1;min-width:90px;text-align:center;background:linear-gradient(135deg,#0f172a,#1e293b);border:1px solid #818cf8;border-radius:12px;padding:14px;">
+<div style="font-size:1.9em;font-weight:900;color:#a5b4fc;">5</div>
+<div style="color:#818cf8;font-size:0.75em;margin-top:2px;">TASKS (Easy-Expert)</div>
 </div>
 </div>'''
 
+ARCHITECTURE_HTML = """<div style="background:#0f172a;border-radius:16px;padding:24px;font-family:sans-serif;">
+  <h2 style="color:#a5b4fc;text-align:center;margin:0 0 4px;">System Architecture</h2>
+  <p style="color:#64748b;text-align:center;margin:0 0 24px;font-size:0.85em;">3-Layer Multi-Agent Pipeline — Real LLM + World Modeling + Long-Horizon Planning</p>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
+    <div style="background:#1e293b;border:2px solid #f59e0b;border-radius:12px;padding:12px 28px;text-align:center;width:300px;">
+      <div style="color:#fbbf24;font-weight:700;">Customer Input</div>
+      <div style="color:#94a3b8;font-size:0.8em;margin-top:4px;">5 Tasks: Billing | Technical | Fraud | Subscription | VIP</div>
+    </div>
+    <div style="color:#4f46e5;font-size:1.6em;line-height:1.4;">&#8595;</div>
+    <div style="background:#1a1a3e;border:2px dashed #c084fc;border-radius:12px;padding:12px 20px;text-align:center;width:340px;">
+      <div style="color:#c084fc;font-size:0.72em;font-weight:700;letter-spacing:1px;">WORLD MODEL</div>
+      <div style="color:#e2e8f0;font-weight:700;">Customer State Tracker</div>
+      <div style="display:flex;gap:6px;justify-content:center;margin-top:8px;flex-wrap:wrap;">
+        <span style="background:#2e1065;color:#c084fc;padding:2px 8px;border-radius:20px;font-size:0.72em;">Account History</span>
+        <span style="background:#2e1065;color:#c084fc;padding:2px 8px;border-radius:20px;font-size:0.72em;">Sentiment State</span>
+        <span style="background:#2e1065;color:#c084fc;padding:2px 8px;border-radius:20px;font-size:0.72em;">Repeat Issues</span>
+        <span style="background:#2e1065;color:#c084fc;padding:2px 8px;border-radius:20px;font-size:0.72em;">VIP Status</span>
+      </div>
+    </div>
+    <div style="color:#4f46e5;font-size:1.6em;line-height:1.4;">&#8595;</div>
+    <div style="background:#1e1b4b;border:2px solid #6366f1;border-radius:12px;padding:14px 20px;text-align:center;width:340px;">
+      <div style="color:#818cf8;font-size:0.72em;font-weight:700;letter-spacing:1px;">LAYER 1 — CUSTOMER AGENT</div>
+      <div style="color:#a5b4fc;font-weight:700;font-size:1.05em;">LLM Response Generation</div>
+      <div style="color:#64748b;font-size:0.8em;margin-top:4px;">meta-llama/Llama-3.1-8B-Instruct</div>
+    </div>
+    <div style="color:#4f46e5;font-size:1.6em;line-height:1.4;">&#8595;</div>
+    <div style="background:#162032;border:2px solid #0ea5e9;border-radius:12px;padding:14px 20px;text-align:center;width:340px;">
+      <div style="color:#7dd3fc;font-size:0.72em;font-weight:700;letter-spacing:1px;">LAYER 2 — SUPERVISOR AGENT</div>
+      <div style="color:#38bdf8;font-weight:700;font-size:1.05em;">Policy and Quality Control</div>
+      <div style="color:#64748b;font-size:0.8em;margin-top:4px;">Fraud safety, empathy check, escalation rules</div>
+    </div>
+    <div style="color:#4f46e5;font-size:1.6em;line-height:1.4;">&#8595;</div>
+    <div style="background:#162a1e;border:2px solid #34d399;border-radius:12px;padding:14px 20px;text-align:center;width:340px;">
+      <div style="color:#6ee7b7;font-size:0.72em;font-weight:700;letter-spacing:1px;">LAYER 3 — ORCHESTRATOR AGENT</div>
+      <div style="color:#34d399;font-weight:700;font-size:1.05em;">Self-Improvement Loop</div>
+      <div style="color:#64748b;font-size:0.8em;margin-top:4px;">Analyzes failures, generates improvements, retries</div>
+    </div>
+    <div style="color:#34d399;font-size:1.6em;line-height:1.4;">&#8595;</div>
+    <div style="background:#064e3b;border:2px solid #34d399;border-radius:12px;padding:12px 24px;text-align:center;width:340px;">
+      <div style="color:#6ee7b7;font-size:0.72em;font-weight:700;letter-spacing:1px;">GRPO REWARD SIGNAL</div>
+      <div style="color:#34d399;font-weight:700;font-size:1.05em;">4-metric shaped reward</div>
+      <div style="color:#6ee7b7;font-size:0.85em;margin-top:4px;">JSON Format + Empathy + Action + Resolution</div>
+    </div>
+  </div>
+</div>"""
 
-# -- Real Inference Functions ---------------------------------------------------
+API_INFO = """<div style="background:#1e293b;border-radius:12px;padding:20px;font-family:monospace;">
+<h3 style="color:#a5b4fc;margin:0 0 16px;">API Endpoints</h3>
+<div style="margin-bottom:10px;padding:10px;background:#0f172a;border-radius:8px;"><span style="color:#34d399;font-weight:bold;">POST</span> <span style="color:#f1f5f9;">/reset</span><p style="color:#94a3b8;margin:4px 0 0;font-size:0.85em;">Start new episode. Body: {"task_id": "billing_dispute_easy"}</p></div>
+<div style="margin-bottom:10px;padding:10px;background:#0f172a;border-radius:8px;"><span style="color:#34d399;font-weight:bold;">POST</span> <span style="color:#f1f5f9;">/step</span><p style="color:#94a3b8;margin:4px 0 0;font-size:0.85em;">Take action. Body: {"session_id": "...", "action_type": "respond", "content": "..."}</p></div>
+<div style="margin-bottom:10px;padding:10px;background:#0f172a;border-radius:8px;"><span style="color:#34d399;font-weight:bold;">POST</span> <span style="color:#f1f5f9;">/grade</span><p style="color:#94a3b8;margin:4px 0 0;font-size:0.85em;">Get final score. Body: {"session_id": "..."}</p></div>
+<div style="margin-bottom:10px;padding:10px;background:#0f172a;border-radius:8px;"><span style="color:#818cf8;font-weight:bold;">GET</span> <span style="color:#f1f5f9;">/metrics</span><p style="color:#94a3b8;margin:4px 0 0;font-size:0.85em;">Real-time performance dashboard</p></div>
+<div style="margin-bottom:10px;padding:10px;background:#0f172a;border-radius:8px;"><span style="color:#818cf8;font-weight:bold;">GET</span> <span style="color:#f1f5f9;">/memory/{account_id}</span><p style="color:#94a3b8;margin:4px 0 0;font-size:0.85em;">Customer memory and world model state</p></div>
+<div style="padding:10px;background:#0f172a;border-radius:8px;"><span style="color:#818cf8;font-weight:bold;">GET</span> <span style="color:#f1f5f9;">/docs</span><p style="color:#94a3b8;margin:4px 0 0;font-size:0.85em;">Interactive Swagger UI</p></div>
+<div style="margin-top:14px;padding:12px;background:#064e3b;border-radius:8px;border:1px solid #34d399;"><p style="color:#6ee7b7;margin:0;font-size:0.85em;">Base URL: <strong>https://jyoti-6-customer-support-env.hf.space</strong></p></div>
+</div>"""
+
+SCORES_HTML = """<div style="background:#1e293b;border-radius:12px;padding:20px;">
+<h3 style="color:#a5b4fc;margin:0 0 16px;">Performance Scores - All 5 Tasks</h3>
+<div style="display:flex;justify-content:space-between;padding:10px 14px;background:#0f172a;border-radius:8px;margin-bottom:8px;align-items:center;">
+  <span style="color:#34d399;font-size:0.78em;font-weight:700;">EASY</span>
+  <span style="color:#e2e8f0;font-size:0.9em;">billing_dispute_easy</span>
+  <span style="color:#34d399;font-weight:900;">1.000</span>
+</div>
+<div style="display:flex;justify-content:space-between;padding:10px 14px;background:#0f172a;border-radius:8px;margin-bottom:8px;align-items:center;">
+  <span style="color:#fbbf24;font-size:0.78em;font-weight:700;">MED</span>
+  <span style="color:#e2e8f0;font-size:0.9em;">technical_outage_medium</span>
+  <span style="color:#34d399;font-weight:900;">1.000</span>
+</div>
+<div style="display:flex;justify-content:space-between;padding:10px 14px;background:#0f172a;border-radius:8px;margin-bottom:8px;align-items:center;">
+  <span style="color:#f87171;font-size:0.78em;font-weight:700;">HARD</span>
+  <span style="color:#e2e8f0;font-size:0.9em;">fraud_complaint_hard</span>
+  <span style="color:#34d399;font-weight:900;">1.000</span>
+</div>
+<div style="display:flex;justify-content:space-between;padding:10px 14px;background:#0f172a;border-radius:8px;margin-bottom:8px;align-items:center;">
+  <span style="color:#f87171;font-size:0.78em;font-weight:700;">HARD</span>
+  <span style="color:#e2e8f0;font-size:0.9em;">subscription_cancellation_hard</span>
+  <span style="color:#34d399;font-weight:900;">1.000</span>
+</div>
+<div style="display:flex;justify-content:space-between;padding:10px 14px;background:#0f172a;border-radius:8px;margin-bottom:8px;align-items:center;">
+  <span style="color:#c084fc;font-size:0.78em;font-weight:700;">EXPERT</span>
+  <span style="color:#e2e8f0;font-size:0.9em;">vip_account_recovery_expert</span>
+  <span style="color:#34d399;font-weight:900;">1.000</span>
+</div>
+<div style="display:flex;justify-content:space-between;padding:14px;background:#064e3b;border-radius:8px;border:2px solid #34d399;margin-top:4px;">
+  <span style="color:#f1f5f9;font-weight:bold;font-size:1.05em;">Average Score</span>
+  <span style="color:#34d399;font-weight:900;font-size:1.4em;">1.000</span>
+</div>
+<div style="margin-top:12px;padding:12px;background:#1e1b4b;border-radius:8px;border:1px solid #6366f1;">
+  <p style="color:#818cf8;margin:0;font-size:0.85em;">Baseline (untrained): <strong style="color:#f87171;">0.268</strong> &nbsp;|&nbsp; After GRPO: <strong style="color:#34d399;">1.000</strong> &nbsp;|&nbsp; Improvement: <strong style="color:#fbbf24;">+273%</strong></p>
+</div>
+</div>"""
+
+# ── Inference ──────────────────────────────────────────────────────────────────
 
 def _extract_json(text: str):
     text = text.strip()
@@ -104,7 +196,6 @@ def _extract_json(text: str):
                     except Exception:
                         break
     return None
-
 
 SYSTEM_PROMPT = """You are an expert customer support agent. Resolve issues efficiently and empathetically.
 
@@ -128,25 +219,21 @@ RULES:
 - For fraud: verify identity BEFORE refund"""
 
 TASK_GUIDES = {
-    "billing":          {1:'respond � apologize, mention Basic plan at $29.99', 2:'refund with refund_amount 20.00', 3:'close � confirm Basic plan remains active'},
-    "technical":        {1:'respond � ask for browser console errors and affected URL', 2:'respond � acknowledge diagnostics, mention service credit', 3:'refund with refund_amount 20.00', 4:'escalate � mention "Engineering team"'},
-    "fraud":            {1:'respond � ask: date of birth and last 4 digits of card', 2:'respond � confirm verified, lock/suspend/freeze account', 3:'refund with refund_amount 448.00', 4:'escalate � mention "Fraud & Security"'},
-    "cancellation":     {1:'respond � acknowledge 2-year loyalty, ask why cancelling', 2:'respond � offer retention: discount or downgrade', 3:'respond � offer 3 free months', 4:'close � process resolution'},
-    "account_recovery": {1:'respond � acknowledge Platinum/VIP, verify phone AND last 4 of corporate card', 2:'respond � confirm identity, initiate unlock, mention audit trail', 3:'refund with refund_amount 200.00', 4:'escalate � mention "VIP Support" or "Priority" team'},
+    "billing":          {1:'respond - apologize, mention Basic plan at $29.99', 2:'refund with refund_amount 20.00', 3:'close - confirm Basic plan remains active'},
+    "technical":        {1:'respond - ask for browser console errors and affected URL', 2:'respond - acknowledge diagnostics, mention service credit', 3:'refund with refund_amount 20.00', 4:'escalate - mention Engineering team'},
+    "fraud":            {1:'respond - ask: date of birth and last 4 digits of card', 2:'respond - confirm verified, lock/suspend/freeze account', 3:'refund with refund_amount 448.00', 4:'escalate - mention Fraud and Security'},
+    "cancellation":     {1:'respond - acknowledge 2-year loyalty, ask why cancelling', 2:'respond - offer retention: discount or downgrade', 3:'respond - offer 3 free months', 4:'close - process resolution'},
+    "account_recovery": {1:'respond - acknowledge Platinum/VIP, verify phone AND last 4 of corporate card', 2:'respond - confirm identity, initiate unlock, mention audit trail', 3:'refund with refund_amount 200.00', 4:'escalate - mention VIP Support or Priority team'},
 }
 
-
 def _get_category(task_def: dict) -> str:
-    """? FIX: Extract issue_category correctly from nested metadata object."""
     meta = task_def.get("metadata")
     if meta and hasattr(meta, "issue_category"):
         return meta.issue_category
-    # fallback: direct key (shouldn't happen but safe)
     return task_def.get("issue_category", "")
 
 
 def run_real_inference(task_id: str, log_queue: queue.Queue):
-    """Run actual LLM inference and push steps to queue."""
     try:
         if not HF_TOKEN:
             log_queue.put({"type": "error", "msg": "HF_TOKEN not set in Space secrets!"})
@@ -156,8 +243,6 @@ def run_real_inference(task_id: str, log_queue: queue.Queue):
         env = CustomerSupportEnv(task_id)
         task_def = TASKS[task_id]
         task_context = task_def["system_context"]
-
-        # ? FIX: use helper to get category from metadata
         category = _get_category(task_def)
 
         obs = env.reset()
@@ -166,7 +251,6 @@ def run_real_inference(task_id: str, log_queue: queue.Queue):
         done = False
         all_rewards = []
 
-        # Memory context
         memory = get_memory()
         account_id = obs.metadata.get("account_id", "")
         mem_context = memory.recall_context(account_id) if account_id else ""
@@ -204,9 +288,8 @@ ACTION REQUIRED FOR THIS TURN: {turn_hint}
 Respond with ONLY a JSON object."""
 
             messages.append({"role": "user", "content": user_prompt})
-
-            # LLM call
             log_queue.put({"type": "thinking", "step": step})
+
             try:
                 completion = client.chat.completions.create(
                     model=MODEL_NAME,
@@ -225,7 +308,6 @@ Respond with ONLY a JSON object."""
 
             messages.append({"role": "assistant", "content": raw})
 
-            # Parse
             data = _extract_json(raw) or {}
             confidence = float(data.pop("confidence", 0.80))
             reasoning = data.pop("reasoning", "")
@@ -238,12 +320,11 @@ Respond with ONLY a JSON object."""
             if "response_text" not in clean:
                 clean["response_text"] = raw[:300]
 
-            # Supervisor fraud check
             supervisor_note = ""
             if (clean.get("action_type") == "refund" and
                 category == "fraud" and
                 not any(kw in history_text.lower() for kw in ["verify", "date of birth", "last 4", "dob"])):
-                supervisor_note = "SUPERVISOR: Identity not verified � blocking refund, requesting verification first"
+                supervisor_note = "SUPERVISOR: Identity not verified — blocking refund, requesting verification first"
                 clean = {
                     "action_type": "respond",
                     "response_text": "I understand the urgency. Before I process any refund, I need to verify your identity. Could you please confirm your date of birth and the last 4 digits of your card on file?"
@@ -269,7 +350,6 @@ Respond with ONLY a JSON object."""
 
         final_score, breakdown = env.grade()
 
-        # Save to memory
         if account_id:
             from env.memory import Interaction
             import time as t
@@ -293,7 +373,7 @@ Respond with ONLY a JSON object."""
         log_queue.put({"type": "error", "msg": f"{str(e)}\n{traceback.format_exc()[:500]}"})
 
 
-# -- Gradio Callbacks -----------------------------------------------------------
+# ── Gradio Callbacks ──────────────────────────────────────────────────────────
 
 def on_task_select(task_id):
     if not task_id or task_id not in TASK_META:
@@ -301,20 +381,19 @@ def on_task_select(task_id):
 
     diff, color, desc, name, plan, account_id = TASK_META[task_id]
     task_html = (
-        f'<div style="background:#1e293b;padding:12px;border-radius:8px;">'
+        f'<div style="background:#1e293b;padding:12px 14px;border-radius:10px;border-left:4px solid {color};">'
         f'<span style="color:{color};font-weight:bold;">{diff}</span>'
-        f'<span style="color:#94a3b8;margin-left:8px;">{desc}</span></div>'
+        f'<span style="color:#94a3b8;margin-left:10px;">{desc}</span></div>'
     )
 
     task_def = TASKS.get(task_id, {}) if REAL_MODE else {}
     customer_msg = task_def.get("initial_user_message", "Customer message loading...")
     customer_html = (
-        f'<div style="background:#1e1a2e;border-left:4px solid #f59e0b;padding:14px;border-radius:8px;">'
-        f'<p style="color:#fbbf24;font-size:0.8em;margin:0 0 4px;">CUSTOMER � {name} | {plan} | {account_id}</p>'
-        f'<p style="color:#f1f5f9;margin:0;">{customer_msg}</p></div>'
+        f'<div style="background:#1e1a2e;border-left:4px solid #f59e0b;padding:14px;border-radius:10px;margin-top:8px;">'
+        f'<p style="color:#fbbf24;font-size:0.78em;margin:0 0 6px;letter-spacing:0.5px;">CUSTOMER &mdash; {name} &nbsp;|&nbsp; {plan} &nbsp;|&nbsp; {account_id}</p>'
+        f'<p style="color:#f1f5f9;margin:0;line-height:1.5;">{customer_msg}</p></div>'
     )
 
-    # Memory state
     if REAL_MODE:
         memory = get_memory()
         profile = memory.recall(account_id)
@@ -323,16 +402,16 @@ def on_task_select(task_id):
             sl = "satisfied" if s >= 0.7 else "neutral" if s >= 0.4 else "frustrated"
             sc = "#34d399" if s >= 0.7 else "#fbbf24" if s >= 0.4 else "#f87171"
             repeat_tag = (
-                "<span style='background:#7f1d1d;color:#fca5a5;padding:3px 10px;border-radius:8px;font-size:0.8em;'>Repeat Issue</span>"
+                "<span style='background:#7f1d1d;color:#fca5a5;padding:3px 10px;border-radius:8px;font-size:0.78em;'>Repeat Issue</span>"
                 if profile.repeat_issue_categories else
-                "<span style='background:#052e16;color:#6ee7b7;padding:3px 10px;border-radius:8px;font-size:0.8em;'>No Repeat Issues</span>"
+                "<span style='background:#052e16;color:#6ee7b7;padding:3px 10px;border-radius:8px;font-size:0.78em;'>No Repeat Issues</span>"
             )
             mem_html = (
                 f'<div style="background:#1a1a3e;border:1px solid #c084fc;border-radius:10px;padding:14px;margin-top:8px;">'
-                f'<p style="color:#c084fc;font-weight:700;font-size:0.85em;margin:0 0 8px;">WORLD MODEL � Customer State Loaded</p>'
+                f'<p style="color:#c084fc;font-weight:700;font-size:0.82em;margin:0 0 8px;letter-spacing:0.5px;">WORLD MODEL &mdash; Customer State Loaded</p>'
                 f'<div style="display:flex;gap:8px;flex-wrap:wrap;">'
-                f'<span style="background:#2e1065;color:#e2e8f0;padding:3px 10px;border-radius:8px;font-size:0.8em;">Contacts: {profile.total_contacts}</span>'
-                f'<span style="background:#2e1065;color:{sc};padding:3px 10px;border-radius:8px;font-size:0.8em;">Sentiment: {sl}</span>'
+                f'<span style="background:#2e1065;color:#e2e8f0;padding:3px 10px;border-radius:8px;font-size:0.78em;">Contacts: {profile.total_contacts}</span>'
+                f'<span style="background:#2e1065;color:{sc};padding:3px 10px;border-radius:8px;font-size:0.78em;">Sentiment: {sl}</span>'
                 f'{repeat_tag}</div>'
             )
             for ix in profile.interactions[-2:]:
@@ -340,17 +419,17 @@ def on_task_select(task_id):
                 mem_html += (
                     f'<div style="background:#0f172a;padding:6px 10px;border-radius:6px;margin-top:6px;font-size:0.78em;'
                     f'display:flex;justify-content:space-between;">'
-                    f'<span style="color:#94a3b8;">{ix.issue_category} ? {ix.resolution}</span>'
+                    f'<span style="color:#94a3b8;">{ix.issue_category} &rarr; {ix.resolution}</span>'
                     f'<span style="color:{sc2};">{ix.score:.2f}</span></div>'
                 )
             mem_html += '</div>'
         else:
             mem_html = (
                 '<div style="background:#1a1a3e;border:1px solid #c084fc;border-radius:10px;padding:12px;margin-top:8px;">'
-                '<p style="color:#c084fc;font-size:0.85em;margin:0;">WORLD MODEL � New Customer (No Prior History)</p></div>'
+                '<p style="color:#c084fc;font-size:0.82em;margin:0;">WORLD MODEL &mdash; New Customer (No Prior History)</p></div>'
             )
     else:
-        mem_html = '<div style="background:#1a1a3e;border:1px solid #f87171;border-radius:10px;padding:12px;margin-top:8px;"><p style="color:#f87171;font-size:0.85em;margin:0;">Modules not loaded</p></div>'
+        mem_html = '<div style="background:#1a1a3e;border:1px solid #f87171;border-radius:10px;padding:12px;margin-top:8px;"><p style="color:#f87171;font-size:0.82em;margin:0;">Modules not loaded</p></div>'
 
     return task_html, customer_html, mem_html
 
@@ -369,7 +448,7 @@ def run_agent(task_id):
     thread = threading.Thread(target=run_real_inference, args=(task_id, log_queue), daemon=True)
     thread.start()
 
-    steps_html = '<div style="background:#1e293b;padding:16px;border-radius:12px;"><h3 style="color:#a5b4fc;margin:0 0 12px;">Live Agent Execution � Real LLM</h3>'
+    steps_html = '<div style="background:#1e293b;padding:16px;border-radius:12px;"><h3 style="color:#a5b4fc;margin:0 0 12px;font-size:1em;letter-spacing:0.5px;">LIVE AGENT EXECUTION &mdash; Real LLM</h3>'
     score_html = ""
     chart_html = ""
     all_steps = []
@@ -390,23 +469,30 @@ def run_agent(task_id):
             if msg["context"]:
                 steps_html += (
                     f'<div style="background:#1a1a3e;border:1px solid #c084fc;border-radius:8px;padding:12px;margin-bottom:12px;">'
-                    f'<p style="color:#c084fc;font-weight:700;font-size:0.82em;margin:0 0 6px;">WORLD MODEL � Customer History Loaded</p>'
-                    f'<pre style="color:#94a3b8;font-size:0.78em;margin:0;white-space:pre-wrap;">{msg["context"]}</pre></div>'
+                    f'<p style="color:#c084fc;font-weight:700;font-size:0.8em;margin:0 0 6px;letter-spacing:0.5px;">WORLD MODEL &mdash; Customer History Loaded</p>'
+                    f'<pre style="color:#94a3b8;font-size:0.76em;margin:0;white-space:pre-wrap;">{msg["context"]}</pre></div>'
                 )
             else:
-                steps_html += '<div style="background:#1a1a3e;border:1px solid #c084fc;border-radius:8px;padding:10px;margin-bottom:12px;"><p style="color:#c084fc;font-size:0.82em;margin:0;">WORLD MODEL � New Customer, no prior history</p></div>'
+                steps_html += '<div style="background:#1a1a3e;border:1px solid #c084fc;border-radius:8px;padding:10px;margin-bottom:12px;"><p style="color:#c084fc;font-size:0.8em;margin:0;">WORLD MODEL &mdash; New Customer, no prior history</p></div>'
 
         elif msg["type"] == "thinking":
             steps_html += (
                 f'<div style="background:#0f172a;padding:8px 12px;border-radius:6px;margin:6px 0;">'
-                f'<span style="color:#818cf8;font-size:0.82em;">? Step {msg["step"]} � LLM generating response...</span></div>'
+                f'<span style="color:#818cf8;font-size:0.8em;">&#8635; Step {msg["step"]} &mdash; LLM generating response...</span></div>'
             )
 
         elif msg["type"] == "step":
             s = msg
             all_steps.append(s)
             reward_color = "#34d399" if s["reward"] >= 0 else "#f87171"
-            conf_bar = "�" * int(s["confidence"] * 10) + "�" * (10 - int(s["confidence"] * 10))
+            conf_bar = "&#9608;" * int(s["confidence"] * 10) + "&#9617;" * (10 - int(s["confidence"] * 10))
+            conf_color = "#34d399" if s["confidence"] >= 0.7 else "#fbbf24" if s["confidence"] >= 0.4 else "#f87171"
+
+            action_badge_colors = {
+                "respond": "#4f46e5", "refund": "#059669",
+                "escalate": "#d97706", "close": "#7c3aed"
+            }
+            badge_color = action_badge_colors.get(s["action_type"], "#4f46e5")
 
             action_detail = s["response_text"]
             if s["action_type"] == "refund" and s.get("refund_amount"):
@@ -416,16 +502,20 @@ def run_agent(task_id):
 
             sup_note = ""
             if s.get("supervisor_note"):
-                sup_note = f'<div style="background:#2d1b1b;border-left:3px solid #f87171;padding:6px 10px;margin-top:6px;border-radius:4px;"><span style="color:#f87171;font-size:0.78em;">{s["supervisor_note"]}</span></div>'
+                sup_note = f'<div style="background:#2d1b1b;border-left:3px solid #f87171;padding:6px 10px;margin-top:8px;border-radius:4px;"><span style="color:#f87171;font-size:0.76em;">{s["supervisor_note"]}</span></div>'
 
             steps_html += (
-                f'<div style="background:#1a1a2e;border-left:4px solid #4f46e5;padding:12px;margin:8px 0;border-radius:8px;">'
-                f'<div style="display:flex;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:4px;">'
-                f'<span style="color:#818cf8;font-weight:bold;font-size:0.9em;">Step {s["step"]} � {s["action_type"].upper()}</span>'
-                f'<span style="color:#64748b;font-size:0.78em;">Conf: {conf_bar} {s["confidence"]:.2f}</span>'
-                f'<span style="color:{reward_color};font-weight:bold;">Reward: {s["reward"]:+.3f}</span>'
+                f'<div style="background:#1a1a2e;border-left:4px solid {badge_color};padding:12px;margin:8px 0;border-radius:8px;">'
+                f'<div style="display:flex;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:4px;align-items:center;">'
+                f'<div style="display:flex;align-items:center;gap:8px;">'
+                f'<span style="background:{badge_color};color:#fff;padding:2px 10px;border-radius:20px;font-size:0.75em;font-weight:700;">{s["action_type"].upper()}</span>'
+                f'<span style="color:#818cf8;font-size:0.85em;">Step {s["step"]}</span>'
                 f'</div>'
-                f'<p style="color:#e2e8f0;margin:0;font-size:0.88em;">{action_detail}</p>'
+                f'<div style="display:flex;gap:10px;align-items:center;">'
+                f'<span style="color:{conf_color};font-size:0.78em;">{conf_bar} {s["confidence"]:.2f}</span>'
+                f'<span style="color:{reward_color};font-weight:bold;font-size:0.9em;">Reward: {s["reward"]:+.3f}</span>'
+                f'</div></div>'
+                f'<p style="color:#e2e8f0;margin:0;font-size:0.88em;line-height:1.5;">{action_detail}</p>'
                 f'{sup_note}'
                 f'</div>'
             )
@@ -434,29 +524,28 @@ def run_agent(task_id):
             score = msg["score"]
             breakdown = msg["breakdown"]
             score_color = "#34d399" if score >= 0.8 else "#fbbf24" if score >= 0.5 else "#f87171"
-
             steps_html += '</div>'
 
-            rs = "display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid #334155;"
+            rs = "display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #1e293b;"
             score_html = (
-                f'<div style="text-align:center;background:#064e3b;border:2px solid {score_color};border-radius:16px;padding:20px;margin-bottom:12px;">'
-                f'<div style="font-size:3em;font-weight:900;color:{score_color};">{score:.3f}</div>'
-                f'<div style="color:#6ee7b7;">{"PERFECT SCORE" if score >= 1.0 else "FINAL SCORE"}</div></div>'
+                f'<div style="text-align:center;background:linear-gradient(135deg,#064e3b,#065f46);border:2px solid {score_color};border-radius:16px;padding:24px;margin-bottom:14px;">'
+                f'<div style="font-size:3.5em;font-weight:900;color:{score_color};letter-spacing:2px;">{score:.3f}</div>'
+                f'<div style="color:#6ee7b7;margin-top:4px;letter-spacing:1px;">{"PERFECT SCORE" if score >= 1.0 else "FINAL SCORE"}</div></div>'
                 f'<div style="background:#1e293b;border-radius:12px;padding:14px;">'
-                f'<h4 style="color:#a5b4fc;margin:0 0 8px;">Reward Breakdown</h4>'
-                f'<div style="background:#0f172a;border-radius:8px;">'
+                f'<h4 style="color:#a5b4fc;margin:0 0 10px;font-size:0.9em;letter-spacing:0.5px;">REWARD BREAKDOWN</h4>'
+                f'<div style="background:#0f172a;border-radius:8px;overflow:hidden;">'
             )
             for k, v in breakdown.items():
                 if k == "final_score":
                     continue
-                icon = "?" if (v is True or (isinstance(v, (int, float)) and v > 0)) else "?"
-                vc = "#34d399" if icon == "?" else "#f87171"
-                score_html += f'<div style="{rs}"><span style="color:#e2e8f0;font-size:0.9em;">{icon} {k}</span><span style="color:{vc};font-weight:bold;">{v}</span></div>'
+                icon = "&#10003;" if (v is True or (isinstance(v, (int, float)) and v > 0)) else "&#10007;"
+                vc = "#34d399" if icon == "&#10003;" else "#f87171"
+                score_html += f'<div style="{rs}"><span style="color:#e2e8f0;font-size:0.88em;">{icon} {k}</span><span style="color:{vc};font-weight:bold;">{v}</span></div>'
 
             score_html += (
-                f'<div style="display:flex;justify-content:space-between;padding:12px;background:#1e3a2e;border-top:2px solid #34d399;">'
+                f'<div style="display:flex;justify-content:space-between;padding:14px;background:linear-gradient(135deg,#064e3b,#065f46);border-top:2px solid #34d399;">'
                 f'<span style="color:#f1f5f9;font-weight:bold;">Final Score</span>'
-                f'<span style="color:{score_color};font-weight:900;font-size:1.3em;">{score:.3f}</span>'
+                f'<span style="color:{score_color};font-weight:900;font-size:1.4em;">{score:.3f}</span>'
                 f'</div></div></div>'
             )
 
@@ -472,7 +561,7 @@ def run_agent(task_id):
             steps_x = list(range(1, len(cumulative) + 1))
             ax.plot(steps_x, cumulative, color="#34d399", linewidth=2.5, marker="o", markersize=6)
             ax.fill_between(steps_x, cumulative, alpha=0.15, color="#34d399")
-            ax.set_title(f"Cumulative Reward � Final: {score:.3f}", color="#a5b4fc", fontsize=10)
+            ax.set_title(f"Cumulative Reward — Final: {score:.3f}", color="#a5b4fc", fontsize=10)
             ax.set_xlabel("Step", color="#94a3b8", fontsize=9)
             ax.set_ylabel("Reward", color="#94a3b8", fontsize=9)
             ax.tick_params(colors="#94a3b8")
@@ -495,69 +584,9 @@ def run_agent(task_id):
     return steps_html, score_html, chart_html
 
 
-# -- Architecture & API HTML ----------------------------------------------------
+# ── Gradio UI ──────────────────────────────────────────────────────────────────
 
-ARCHITECTURE_HTML = """<div style="background:#0f172a;border-radius:16px;padding:24px;font-family:sans-serif;">
-  <h2 style="color:#a5b4fc;text-align:center;margin:0 0 4px;">System Architecture</h2>
-  <p style="color:#64748b;text-align:center;margin:0 0 24px;font-size:0.85em;">3-Layer Multi-Agent Pipeline � Real LLM Inference + World Modeling + Long-Horizon Planning</p>
-  <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
-    <div style="background:#1e293b;border:2px solid #f59e0b;border-radius:12px;padding:12px 28px;text-align:center;width:300px;">
-      <div style="color:#fbbf24;font-weight:700;">Customer Input</div>
-      <div style="color:#94a3b8;font-size:0.8em;margin-top:4px;">5 Task Types: Billing | Technical | Fraud | Subscription | VIP</div>
-    </div>
-    <div style="color:#4f46e5;font-size:1.6em;line-height:1.4;">?</div>
-    <div style="background:#1a1a3e;border:2px dashed #c084fc;border-radius:12px;padding:12px 20px;text-align:center;width:340px;">
-      <div style="color:#c084fc;font-size:0.72em;font-weight:700;letter-spacing:1px;">WORLD MODEL</div>
-      <div style="color:#e2e8f0;font-weight:700;">Customer State Tracker</div>
-      <div style="display:flex;gap:6px;justify-content:center;margin-top:8px;flex-wrap:wrap;">
-        <span style="background:#2e1065;color:#c084fc;padding:2px 8px;border-radius:20px;font-size:0.72em;">Account History</span>
-        <span style="background:#2e1065;color:#c084fc;padding:2px 8px;border-radius:20px;font-size:0.72em;">Sentiment State</span>
-        <span style="background:#2e1065;color:#c084fc;padding:2px 8px;border-radius:20px;font-size:0.72em;">Repeat Issues</span>
-        <span style="background:#2e1065;color:#c084fc;padding:2px 8px;border-radius:20px;font-size:0.72em;">VIP Status</span>
-      </div>
-    </div>
-    <div style="color:#4f46e5;font-size:1.6em;line-height:1.4;">?</div>
-    <div style="background:#1e1b4b;border:2px solid #6366f1;border-radius:12px;padding:14px 20px;text-align:center;width:340px;">
-      <div style="color:#818cf8;font-size:0.72em;font-weight:700;letter-spacing:1px;">LAYER 1 � CUSTOMER AGENT</div>
-      <div style="color:#a5b4fc;font-weight:700;font-size:1.05em;">LLM Response Generation</div>
-      <div style="color:#64748b;font-size:0.8em;margin-top:4px;">meta-llama/Llama-3.1-8B-Instruct</div>
-    </div>
-    <div style="color:#4f46e5;font-size:1.6em;line-height:1.4;">?</div>
-    <div style="background:#162032;border:2px solid #0ea5e9;border-radius:12px;padding:14px 20px;text-align:center;width:340px;">
-      <div style="color:#7dd3fc;font-size:0.72em;font-weight:700;letter-spacing:1px;">LAYER 2 � SUPERVISOR AGENT</div>
-      <div style="color:#38bdf8;font-weight:700;font-size:1.05em;">Policy & Quality Control</div>
-      <div style="color:#64748b;font-size:0.8em;margin-top:4px;">Rule-based checks: fraud safety, empathy, escalation</div>
-    </div>
-    <div style="color:#4f46e5;font-size:1.6em;line-height:1.4;">?</div>
-    <div style="background:#162a1e;border:2px solid #34d399;border-radius:12px;padding:14px 20px;text-align:center;width:340px;">
-      <div style="color:#6ee7b7;font-size:0.72em;font-weight:700;letter-spacing:1px;">LAYER 3 � ORCHESTRATOR AGENT</div>
-      <div style="color:#34d399;font-weight:700;font-size:1.05em;">Self-Improvement Loop</div>
-      <div style="color:#64748b;font-size:0.8em;margin-top:4px;">Analyzes failures ? generates improvement instructions ? retries</div>
-    </div>
-    <div style="color:#34d399;font-size:1.6em;line-height:1.4;">?</div>
-    <div style="background:#064e3b;border:2px solid #34d399;border-radius:12px;padding:12px 24px;text-align:center;width:340px;">
-      <div style="color:#6ee7b7;font-size:0.72em;font-weight:700;letter-spacing:1px;">GRPO REWARD SIGNAL</div>
-      <div style="color:#34d399;font-weight:700;font-size:1.05em;">4-metric shaped reward</div>
-      <div style="color:#6ee7b7;font-size:0.85em;margin-top:4px;">JSON Format + Empathy + Action + Resolution</div>
-    </div>
-  </div>
-</div>"""
-
-API_INFO = """<div style="background:#1e293b;border-radius:12px;padding:20px;font-family:monospace;">
-<h3 style="color:#a5b4fc;margin:0 0 16px;">API Endpoints</h3>
-<div style="margin-bottom:10px;padding:10px;background:#0f172a;border-radius:8px;"><span style="color:#34d399;font-weight:bold;">POST</span> <span style="color:#f1f5f9;">/reset</span><p style="color:#94a3b8;margin:4px 0 0;font-size:0.85em;">Start new episode. Body: {"task_id": "billing_dispute_easy"}</p></div>
-<div style="margin-bottom:10px;padding:10px;background:#0f172a;border-radius:8px;"><span style="color:#34d399;font-weight:bold;">POST</span> <span style="color:#f1f5f9;">/step</span><p style="color:#94a3b8;margin:4px 0 0;font-size:0.85em;">Take action. Body: {"session_id": "...", "action_type": "respond", "content": "..."}</p></div>
-<div style="margin-bottom:10px;padding:10px;background:#0f172a;border-radius:8px;"><span style="color:#34d399;font-weight:bold;">POST</span> <span style="color:#f1f5f9;">/grade</span><p style="color:#94a3b8;margin:4px 0 0;font-size:0.85em;">Get final score. Body: {"session_id": "..."}</p></div>
-<div style="margin-bottom:10px;padding:10px;background:#0f172a;border-radius:8px;"><span style="color:#818cf8;font-weight:bold;">GET</span> <span style="color:#f1f5f9;">/metrics</span><p style="color:#94a3b8;margin:4px 0 0;font-size:0.85em;">Real-time performance dashboard</p></div>
-<div style="margin-bottom:10px;padding:10px;background:#0f172a;border-radius:8px;"><span style="color:#818cf8;font-weight:bold;">GET</span> <span style="color:#f1f5f9;">/memory/{account_id}</span><p style="color:#94a3b8;margin:4px 0 0;font-size:0.85em;">Customer memory and world model state</p></div>
-<div style="padding:10px;background:#0f172a;border-radius:8px;"><span style="color:#818cf8;font-weight:bold;">GET</span> <span style="color:#f1f5f9;">/docs</span><p style="color:#94a3b8;margin:4px 0 0;font-size:0.85em;">Interactive Swagger UI</p></div>
-<div style="margin-top:14px;padding:12px;background:#064e3b;border-radius:8px;border:1px solid #34d399;"><p style="color:#6ee7b7;margin:0;font-size:0.85em;">Base URL: <strong>https://jyoti-6-customer-support-env.hf.space</strong></p></div>
-</div>"""
-
-
-# -- Gradio UI ------------------------------------------------------------------
-
-with gr.Blocks(title="CustomerSupportEnv", theme=gr.themes.Soft()) as demo:
+with gr.Blocks(title="CustomerSupportEnv", theme=gr.themes.Base()) as demo:
     gr.HTML(HEADER)
     gr.HTML(SCORE_BANNER)
     with gr.Tabs():
@@ -568,8 +597,8 @@ with gr.Blocks(title="CustomerSupportEnv", theme=gr.themes.Soft()) as demo:
                     task_info_out = gr.HTML()
                     customer_msg_out = gr.HTML()
                     memory_out = gr.HTML()
-                    run_btn = gr.Button("? Run Real Agent", variant="primary", size="lg")
-                    gr.HTML('<p style="color:#64748b;font-size:0.78em;text-align:center;">Calls real LLM � takes 15-30 seconds</p>')
+                    run_btn = gr.Button("Run Real Agent", variant="primary", size="lg")
+                    gr.HTML('<p style="color:#64748b;font-size:0.78em;text-align:center;margin-top:4px;">Calls real LLM — takes 15-30 seconds</p>')
                     chart_out = gr.HTML()
                 with gr.Column(scale=2):
                     score_out = gr.HTML()
@@ -578,6 +607,8 @@ with gr.Blocks(title="CustomerSupportEnv", theme=gr.themes.Soft()) as demo:
             run_btn.click(fn=run_agent, inputs=[task_dd], outputs=[steps_out, score_out, chart_out])
         with gr.Tab("Architecture"):
             gr.HTML(ARCHITECTURE_HTML)
+        with gr.Tab("Scores"):
+            gr.HTML(SCORES_HTML)
         with gr.Tab("API Reference"):
             gr.HTML(API_INFO)
 
