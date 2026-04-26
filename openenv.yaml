@@ -1,59 +1,39 @@
-name: customer-support-agent
-version: "1.0.0"
+from huggingface_hub import HfApi
+from google.colab import userdata
+
+HF_TOKEN = userdata.get('HF_TOKEN')
+api = HfApi(token=HF_TOKEN)
+
+# Updated yaml content
+yaml_content = """name: customer-support-agent
+version: "2.0.0"
 description: >
-  A multi-turn customer support simulation environment where an AI agent must
-  resolve user complaints and queries through typed actions — responding,
-  escalating, issuing refunds, and closing tickets. Rewards are given for
-  efficiency, empathy, and correct resolution.
+  A multi-turn, multi-agent customer support simulation environment where a 
+  3-layer AI agent system resolves user complaints through typed actions.
+  Features world modeling, 10-slot memory, and GRPO-trained policy.
 tags:
   - openenv
   - customer-support
   - multi-turn
+  - multi-agent
+  - grpo
+  - world-modeling
+  - long-horizon
   - reasoning
   - escalation
-author: OpenEnv Hackathon Submission
+author: OpenEnv Hackathon Submission — Jyoti Yadav
 license: MIT
+"""
 
-observation_space:
-  type: object
-  description: Current support ticket state including conversation history
-  fields:
-    ticket_id: string
-    user_message: string
-    conversation_history: list
-    ticket_status: string
-    turn_number: integer
-    metadata: object
+# Save and push
+with open('/content/openenv.yaml', 'w') as f:
+    f.write(yaml_content)
 
-action_space:
-  type: object
-  description: Agent action — one of respond, escalate, refund, close, transfer
-  fields:
-    action_type:
-      enum: [respond, escalate, refund, close, transfer]
-    response_text: string
-    escalation_reason: string
-    refund_amount: float
-    transfer_department: string
-
-reward:
-  range: [-1.0, 1.0]
-  description: >
-    Incremental rewards throughout the episode. Positive for helpful responses,
-    resolution actions, and efficiency. Negative for loops, irrelevance,
-    or destructive/incorrect actions.
-
-tasks:
-  - id: billing_dispute_easy
-    difficulty: easy
-    description: Resolve a simple billing overcharge complaint
-  - id: technical_outage_medium
-    difficulty: medium
-    description: Triage a multi-symptom technical support case requiring escalation
-  - id: fraud_complaint_hard
-    difficulty: hard
-    description: Handle a complex fraud + account compromise with multi-step verification
-
-entrypoint: env/environment.py
-inference_script: inference.py
-dockerfile: Dockerfile
+api.upload_file(
+    path_or_fileobj='/content/openenv.yaml',
+    path_in_repo='openenv.yaml',
+    repo_id='Jyoti-6/customer-support-env',
+    repo_type='space',
+    token=HF_TOKEN
+)
+print('✅ Pushed!')
