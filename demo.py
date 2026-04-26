@@ -1,6 +1,6 @@
-"""
-demo.py — Live Demo for CustomerSupportEnv
-Calls real inference.py — no hardcoded scripts or scores.
+ï»¿"""
+demo.py ï¿½ Live Demo for CustomerSupportEnv
+Calls real inference.py ï¿½ no hardcoded scripts or scores.
 """
 
 import os
@@ -128,11 +128,11 @@ RULES:
 - For fraud: verify identity BEFORE refund"""
 
 TASK_GUIDES = {
-    "billing":          {1:'respond — apologize, mention Basic plan at $29.99', 2:'refund with refund_amount 20.00', 3:'close — confirm Basic plan remains active'},
-    "technical":        {1:'respond — ask for browser console errors and affected URL', 2:'respond — acknowledge diagnostics, mention service credit', 3:'refund with refund_amount 20.00', 4:'escalate — mention "Engineering team"'},
-    "fraud":            {1:'respond — ask: date of birth and last 4 digits of card', 2:'respond — confirm verified, lock/suspend/freeze account', 3:'refund with refund_amount 448.00', 4:'escalate — mention "Fraud & Security"'},
-    "cancellation":     {1:'respond — acknowledge 2-year loyalty, ask why cancelling', 2:'respond — offer retention: discount or downgrade', 3:'respond — offer 3 free months', 4:'close — process resolution'},
-    "account_recovery": {1:'respond — acknowledge Platinum/VIP, verify phone AND last 4 of corporate card', 2:'respond — confirm identity, initiate unlock, mention audit trail', 3:'refund with refund_amount 200.00', 4:'escalate — mention "VIP Support" or "Priority" team'},
+    "billing":          {1:'respond ï¿½ apologize, mention Basic plan at $29.99', 2:'refund with refund_amount 20.00', 3:'close ï¿½ confirm Basic plan remains active'},
+    "technical":        {1:'respond ï¿½ ask for browser console errors and affected URL', 2:'respond ï¿½ acknowledge diagnostics, mention service credit', 3:'refund with refund_amount 20.00', 4:'escalate ï¿½ mention "Engineering team"'},
+    "fraud":            {1:'respond ï¿½ ask: date of birth and last 4 digits of card', 2:'respond ï¿½ confirm verified, lock/suspend/freeze account', 3:'refund with refund_amount 448.00', 4:'escalate ï¿½ mention "Fraud & Security"'},
+    "cancellation":     {1:'respond ï¿½ acknowledge 2-year loyalty, ask why cancelling', 2:'respond ï¿½ offer retention: discount or downgrade', 3:'respond ï¿½ offer 3 free months', 4:'close ï¿½ process resolution'},
+    "account_recovery": {1:'respond ï¿½ acknowledge Platinum/VIP, verify phone AND last 4 of corporate card', 2:'respond ï¿½ confirm identity, initiate unlock, mention audit trail', 3:'refund with refund_amount 200.00', 4:'escalate ï¿½ mention "VIP Support" or "Priority" team'},
 }
 
 
@@ -243,7 +243,7 @@ Respond with ONLY a JSON object."""
             if (clean.get("action_type") == "refund" and
                 category == "fraud" and
                 not any(kw in history_text.lower() for kw in ["verify", "date of birth", "last 4", "dob"])):
-                supervisor_note = "SUPERVISOR: Identity not verified — blocking refund, requesting verification first"
+                supervisor_note = "SUPERVISOR: Identity not verified ï¿½ blocking refund, requesting verification first"
                 clean = {
                     "action_type": "respond",
                     "response_text": "I understand the urgency. Before I process any refund, I need to verify your identity. Could you please confirm your date of birth and the last 4 digits of your card on file?"
@@ -310,7 +310,7 @@ def on_task_select(task_id):
     customer_msg = task_def.get("initial_user_message", "Customer message loading...")
     customer_html = (
         f'<div style="background:#1e1a2e;border-left:4px solid #f59e0b;padding:14px;border-radius:8px;">'
-        f'<p style="color:#fbbf24;font-size:0.8em;margin:0 0 4px;">CUSTOMER — {name} | {plan} | {account_id}</p>'
+        f'<p style="color:#fbbf24;font-size:0.8em;margin:0 0 4px;">CUSTOMER ï¿½ {name} | {plan} | {account_id}</p>'
         f'<p style="color:#f1f5f9;margin:0;">{customer_msg}</p></div>'
     )
 
@@ -329,7 +329,7 @@ def on_task_select(task_id):
             )
             mem_html = (
                 f'<div style="background:#1a1a3e;border:1px solid #c084fc;border-radius:10px;padding:14px;margin-top:8px;">'
-                f'<p style="color:#c084fc;font-weight:700;font-size:0.85em;margin:0 0 8px;">WORLD MODEL — Customer State Loaded</p>'
+                f'<p style="color:#c084fc;font-weight:700;font-size:0.85em;margin:0 0 8px;">WORLD MODEL ï¿½ Customer State Loaded</p>'
                 f'<div style="display:flex;gap:8px;flex-wrap:wrap;">'
                 f'<span style="background:#2e1065;color:#e2e8f0;padding:3px 10px;border-radius:8px;font-size:0.8em;">Contacts: {profile.total_contacts}</span>'
                 f'<span style="background:#2e1065;color:{sc};padding:3px 10px;border-radius:8px;font-size:0.8em;">Sentiment: {sl}</span>'
@@ -347,7 +347,7 @@ def on_task_select(task_id):
         else:
             mem_html = (
                 '<div style="background:#1a1a3e;border:1px solid #c084fc;border-radius:10px;padding:12px;margin-top:8px;">'
-                '<p style="color:#c084fc;font-size:0.85em;margin:0;">WORLD MODEL — New Customer (No Prior History)</p></div>'
+                '<p style="color:#c084fc;font-size:0.85em;margin:0;">WORLD MODEL ï¿½ New Customer (No Prior History)</p></div>'
             )
     else:
         mem_html = '<div style="background:#1a1a3e;border:1px solid #f87171;border-radius:10px;padding:12px;margin-top:8px;"><p style="color:#f87171;font-size:0.85em;margin:0;">Modules not loaded</p></div>'
@@ -369,7 +369,7 @@ def run_agent(task_id):
     thread = threading.Thread(target=run_real_inference, args=(task_id, log_queue), daemon=True)
     thread.start()
 
-    steps_html = '<div style="background:#1e293b;padding:16px;border-radius:12px;"><h3 style="color:#a5b4fc;margin:0 0 12px;">Live Agent Execution — Real LLM</h3>'
+    steps_html = '<div style="background:#1e293b;padding:16px;border-radius:12px;"><h3 style="color:#a5b4fc;margin:0 0 12px;">Live Agent Execution ï¿½ Real LLM</h3>'
     score_html = ""
     chart_html = ""
     all_steps = []
@@ -390,23 +390,23 @@ def run_agent(task_id):
             if msg["context"]:
                 steps_html += (
                     f'<div style="background:#1a1a3e;border:1px solid #c084fc;border-radius:8px;padding:12px;margin-bottom:12px;">'
-                    f'<p style="color:#c084fc;font-weight:700;font-size:0.82em;margin:0 0 6px;">WORLD MODEL — Customer History Loaded</p>'
+                    f'<p style="color:#c084fc;font-weight:700;font-size:0.82em;margin:0 0 6px;">WORLD MODEL ï¿½ Customer History Loaded</p>'
                     f'<pre style="color:#94a3b8;font-size:0.78em;margin:0;white-space:pre-wrap;">{msg["context"]}</pre></div>'
                 )
             else:
-                steps_html += '<div style="background:#1a1a3e;border:1px solid #c084fc;border-radius:8px;padding:10px;margin-bottom:12px;"><p style="color:#c084fc;font-size:0.82em;margin:0;">WORLD MODEL — New Customer, no prior history</p></div>'
+                steps_html += '<div style="background:#1a1a3e;border:1px solid #c084fc;border-radius:8px;padding:10px;margin-bottom:12px;"><p style="color:#c084fc;font-size:0.82em;margin:0;">WORLD MODEL ï¿½ New Customer, no prior history</p></div>'
 
         elif msg["type"] == "thinking":
             steps_html += (
                 f'<div style="background:#0f172a;padding:8px 12px;border-radius:6px;margin:6px 0;">'
-                f'<span style="color:#818cf8;font-size:0.82em;">? Step {msg["step"]} — LLM generating response...</span></div>'
+                f'<span style="color:#818cf8;font-size:0.82em;">? Step {msg["step"]} ï¿½ LLM generating response...</span></div>'
             )
 
         elif msg["type"] == "step":
             s = msg
             all_steps.append(s)
             reward_color = "#34d399" if s["reward"] >= 0 else "#f87171"
-            conf_bar = "¦" * int(s["confidence"] * 10) + "¦" * (10 - int(s["confidence"] * 10))
+            conf_bar = "ï¿½" * int(s["confidence"] * 10) + "ï¿½" * (10 - int(s["confidence"] * 10))
 
             action_detail = s["response_text"]
             if s["action_type"] == "refund" and s.get("refund_amount"):
@@ -421,7 +421,7 @@ def run_agent(task_id):
             steps_html += (
                 f'<div style="background:#1a1a2e;border-left:4px solid #4f46e5;padding:12px;margin:8px 0;border-radius:8px;">'
                 f'<div style="display:flex;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:4px;">'
-                f'<span style="color:#818cf8;font-weight:bold;font-size:0.9em;">Step {s["step"]} — {s["action_type"].upper()}</span>'
+                f'<span style="color:#818cf8;font-weight:bold;font-size:0.9em;">Step {s["step"]} ï¿½ {s["action_type"].upper()}</span>'
                 f'<span style="color:#64748b;font-size:0.78em;">Conf: {conf_bar} {s["confidence"]:.2f}</span>'
                 f'<span style="color:{reward_color};font-weight:bold;">Reward: {s["reward"]:+.3f}</span>'
                 f'</div>'
@@ -472,7 +472,7 @@ def run_agent(task_id):
             steps_x = list(range(1, len(cumulative) + 1))
             ax.plot(steps_x, cumulative, color="#34d399", linewidth=2.5, marker="o", markersize=6)
             ax.fill_between(steps_x, cumulative, alpha=0.15, color="#34d399")
-            ax.set_title(f"Cumulative Reward — Final: {score:.3f}", color="#a5b4fc", fontsize=10)
+            ax.set_title(f"Cumulative Reward ï¿½ Final: {score:.3f}", color="#a5b4fc", fontsize=10)
             ax.set_xlabel("Step", color="#94a3b8", fontsize=9)
             ax.set_ylabel("Reward", color="#94a3b8", fontsize=9)
             ax.tick_params(colors="#94a3b8")
@@ -499,7 +499,7 @@ def run_agent(task_id):
 
 ARCHITECTURE_HTML = """<div style="background:#0f172a;border-radius:16px;padding:24px;font-family:sans-serif;">
   <h2 style="color:#a5b4fc;text-align:center;margin:0 0 4px;">System Architecture</h2>
-  <p style="color:#64748b;text-align:center;margin:0 0 24px;font-size:0.85em;">3-Layer Multi-Agent Pipeline — Real LLM Inference + World Modeling + Long-Horizon Planning</p>
+  <p style="color:#64748b;text-align:center;margin:0 0 24px;font-size:0.85em;">3-Layer Multi-Agent Pipeline ï¿½ Real LLM Inference + World Modeling + Long-Horizon Planning</p>
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div style="background:#1e293b;border:2px solid #f59e0b;border-radius:12px;padding:12px 28px;text-align:center;width:300px;">
       <div style="color:#fbbf24;font-weight:700;">Customer Input</div>
@@ -518,19 +518,19 @@ ARCHITECTURE_HTML = """<div style="background:#0f172a;border-radius:16px;padding
     </div>
     <div style="color:#4f46e5;font-size:1.6em;line-height:1.4;">?</div>
     <div style="background:#1e1b4b;border:2px solid #6366f1;border-radius:12px;padding:14px 20px;text-align:center;width:340px;">
-      <div style="color:#818cf8;font-size:0.72em;font-weight:700;letter-spacing:1px;">LAYER 1 — CUSTOMER AGENT</div>
+      <div style="color:#818cf8;font-size:0.72em;font-weight:700;letter-spacing:1px;">LAYER 1 ï¿½ CUSTOMER AGENT</div>
       <div style="color:#a5b4fc;font-weight:700;font-size:1.05em;">LLM Response Generation</div>
       <div style="color:#64748b;font-size:0.8em;margin-top:4px;">meta-llama/Llama-3.1-8B-Instruct</div>
     </div>
     <div style="color:#4f46e5;font-size:1.6em;line-height:1.4;">?</div>
     <div style="background:#162032;border:2px solid #0ea5e9;border-radius:12px;padding:14px 20px;text-align:center;width:340px;">
-      <div style="color:#7dd3fc;font-size:0.72em;font-weight:700;letter-spacing:1px;">LAYER 2 — SUPERVISOR AGENT</div>
+      <div style="color:#7dd3fc;font-size:0.72em;font-weight:700;letter-spacing:1px;">LAYER 2 ï¿½ SUPERVISOR AGENT</div>
       <div style="color:#38bdf8;font-weight:700;font-size:1.05em;">Policy & Quality Control</div>
       <div style="color:#64748b;font-size:0.8em;margin-top:4px;">Rule-based checks: fraud safety, empathy, escalation</div>
     </div>
     <div style="color:#4f46e5;font-size:1.6em;line-height:1.4;">?</div>
     <div style="background:#162a1e;border:2px solid #34d399;border-radius:12px;padding:14px 20px;text-align:center;width:340px;">
-      <div style="color:#6ee7b7;font-size:0.72em;font-weight:700;letter-spacing:1px;">LAYER 3 — ORCHESTRATOR AGENT</div>
+      <div style="color:#6ee7b7;font-size:0.72em;font-weight:700;letter-spacing:1px;">LAYER 3 ï¿½ ORCHESTRATOR AGENT</div>
       <div style="color:#34d399;font-weight:700;font-size:1.05em;">Self-Improvement Loop</div>
       <div style="color:#64748b;font-size:0.8em;margin-top:4px;">Analyzes failures ? generates improvement instructions ? retries</div>
     </div>
@@ -569,7 +569,7 @@ with gr.Blocks(title="CustomerSupportEnv", theme=gr.themes.Soft()) as demo:
                     customer_msg_out = gr.HTML()
                     memory_out = gr.HTML()
                     run_btn = gr.Button("? Run Real Agent", variant="primary", size="lg")
-                    gr.HTML('<p style="color:#64748b;font-size:0.78em;text-align:center;">Calls real LLM — takes 15-30 seconds</p>')
+                    gr.HTML('<p style="color:#64748b;font-size:0.78em;text-align:center;">Calls real LLM ï¿½ takes 15-30 seconds</p>')
                     chart_out = gr.HTML()
                 with gr.Column(scale=2):
                     score_out = gr.HTML()
