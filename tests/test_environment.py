@@ -1,6 +1,9 @@
-﻿import pytest
+﻿"""
+Tests for the CustomerSupportEnv environment.
+"""
+import pytest
 from env.environment import CustomerSupportEnv
-from env.models import AgentAction, ActionType
+from env.models import Action, ActionType
 from tasks.task_definitions import TASKS
 from graders.task_graders import GRADERS
 
@@ -28,6 +31,7 @@ class TestBillingDisputeTask:
         task = TASKS["billing_dispute_easy"]
         assert task["metadata"].issue_category == "billing"
         assert task["metadata"].refund_eligible is True
+        assert task["metadata"].max_refund == 20.00
 
 class TestFraudComplaintTask:
     def test_task_metadata(self):
