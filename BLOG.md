@@ -227,4 +227,10 @@ Skipping identity verification triggers a SupervisorAgent block — mirroring re
 
 ---
 
+## 📹 Demo Video
+
+👉 [Watch 2-min Demo on Loom](https://loom.com/share/YOUR_LINK)
+
+> Complete walkthrough of the 3-layer agent system in action.
+
 *Built for the OpenEnv Hackathon. All feedback welcome!*
